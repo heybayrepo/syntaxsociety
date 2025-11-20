@@ -1,4 +1,4 @@
-# **Project: Efficient Talent Promotion Tools**
+# **The Promotion Paradox: Fixing Biased Talent Promotion Decisions Through Data-Driven HR Analytics**
 
 ## **By:** Syntax Society
 
@@ -17,13 +17,13 @@ syntaxsociety
 
 ## **Project Overview**
 
-This project aims to build a machine learning model that predicts the likelihood of an employee getting promoted, based on their profile, performance, and training history.
+This project aims to build a machine learning model capable of predicting whether an employee is eligible for promotion using structured performance, leadership, project, and training-related features. The project is motivated by the gap identified between manual, error-prone, biased HR processes and the ideal data-driven decision support system envisioned in the deck
 
 ## **The main objectives are to:**
 
-	•	Identify key factors that influence promotion outcomes.
-	•	Provide data-driven insights to support HR decision-making.
-	•	Present findings through visual analytics and structured reporting.
+	1.	Develop and evaluate multiple ML models for promotion prediction.
+	2.	Engineer new features that better capture employee performance and potential.
+	3.	Deliver a transparent, fair, and explainable model to support HR decision-making.
 
 ## **Dataset:** 
 
