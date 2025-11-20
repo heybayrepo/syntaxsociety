@@ -14,21 +14,9 @@
 
 syntaxsociety
 
-
 ## **Project Overview**
 
 This project aims to build a machine learning model capable of predicting whether an employee is eligible for promotion using structured performance, leadership, project, and training-related features. The project is motivated by the gap identified between manual, error-prone, biased HR processes and the ideal data-driven decision support system envisioned in the deck
-
-## **The main objectives are to:**
-
-	1.	Develop and evaluate multiple ML models for promotion prediction.
-	2.	Engineer new features that better capture employee performance and potential.
-	3.	Deliver a transparent, fair, and explainable model to support HR decision-making.
-
-## **Dataset:** 
-
-Talent Promotion Dataset — provided by Rakamin Bootcamp.
-Stored in Google Drive (not uploaded to GitHub).
 
 ## **Repo structure:**
 
@@ -80,3 +68,25 @@ Stored in Google Drive (not uploaded to GitHub).
 3. Use clear, descriptive commit messages.
 4. Store large files (datasets, models, etc.) on Google Drive, not in the repo.
 5. Discuss major code changes with the team before merging.
+
+## **The main objectives are to:**
+
+	1.	Develop and evaluate multiple ML models for promotion prediction.
+	2.	Engineer new features that better capture employee performance and potential.
+	3.	Deliver a transparent, fair, and explainable model to support HR decision-making.
+
+## **Dataset summary:** 
+
+	•	Rows: 1000
+	•	Columns: 10
+	•	Target: Promotion_Eligible (binary: 0 = not eligible, 1 = eligible)
+	•	Issue Findings:
+	•	449 missing values
+	•	Implausible values (negative age, underage employees, 5000+ training hours)
+	•	Inconsistent Years_at_Company
+	•	Outliers in Age, Training_Hours, Years_at_Company
+	•	Target imbalance: 29% eligible, 71% not eligible
+
+* Talent Promotion Dataset — provided by Rakamin Bootcamp.
+* Stored in Google Drive (not uploaded to GitHub).
+
