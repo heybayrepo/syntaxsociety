@@ -89,4 +89,3 @@ This project aims to build a machine learning model capable of predicting whethe
 
 * Talent Promotion Dataset — provided by Rakamin Bootcamp.
 * Stored in Google Drive (not uploaded to GitHub).
-
