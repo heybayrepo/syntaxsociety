@@ -15,13 +15,11 @@
 
 syntaxsociety
 
-<img width="851" height="477" alt="Screenshot 2025-11-22 at 12 02 47" src="https://github.com/user-attachments/assets/46066438-0428-4aba-8b7f-5066100a0ca9" />
-
 ## **Project Overview**
 
-This project focuses on predicting employee promotion eligibility using structured HR data such as performance scores, leadership metrics, peer review scores, project experience, and training hours.
+<img width="851" height="477" alt="Screenshot 2025-11-22 at 12 02 47" src="https://github.com/user-attachments/assets/46066438-0428-4aba-8b7f-5066100a0ca9" />
 
-<img width="850" height="475" alt="Screenshot 2025-11-22 at 12 05 42" src="https://github.com/user-attachments/assets/d9299cbe-8a33-4901-83c0-de12236aa737" />
+This project focuses on predicting employee promotion eligibility using structured HR data such as performance scores, leadership metrics, peer review scores, project experience, and training hours.
 
 The motivation comes from a clear gap identified in the HR workflow:
 - Manual data entry → numerous inconsistencies and anomalies
@@ -29,6 +27,8 @@ The motivation comes from a clear gap identified in the HR workflow:
 - Lack of standardized, explainable evaluation tools
 
 Through data cleaning, feature engineering, and machine learning modeling, this project aims to support HR with a fair, objective, transparent decision-support system.
+
+<img width="850" height="475" alt="Screenshot 2025-11-22 at 12 05 42" src="https://github.com/user-attachments/assets/d9299cbe-8a33-4901-83c0-de12236aa737" />
 
 ## **Repo structure:**
 
