@@ -90,13 +90,13 @@ These issues were addressed through imputation, outlier removal, and removal of 
 ## **Data Cleaning & Preprocessing**
 
 ### Outlier Handling
-	- Removed ~1.3% data entries with extreme values (Age, Training Hours).
-	- Dropped Years_at_Company due to consistent logical errors.
+- Removed ~1.3% data entries with extreme values (Age, Training Hours).
+- Dropped Years_at_Company due to consistent logical errors.
 
 ### Missing Value Treatment
-	- Numeric → Median
- 	- Categorical → Mode
-  	- Result: 0 missing values.
+- Numeric → Median
+- Categorical → Mode
+- Result: 0 missing values
 
 <img width="600" height="338" alt="Feature selection strategy" src="https://github.com/user-attachments/assets/b568aef9-dc89-40c5-8a4d-1ed052c0cd36" />
 
@@ -127,9 +127,9 @@ Two new features were created to reduce bias and improve representational power:
 - Performance_Consistency = Performance_Score x Projects_Handled_scaled
 
 ### Standardization & Balancing
-	•	All numeric features were standardized.
-	•	Target kept as binary.
-	•	SMOTE applied to balance the dataset.
+- All numeric features were standardized
+- Target kept as binary
+- SMOTE applied to balance the dataset
 
 <img width="600" height="338" alt="Data cleansing and correlation map" src="https://github.com/user-attachments/assets/6dd10242-86b8-4f4b-a1af-b227244781d8" />
 
@@ -141,16 +141,16 @@ Before evaluating the machine learning models, it’s important to define how mo
 
 ### Unsupervised Evaluation (clustering)
 
-- Silhouette Score: Measures how well each employee fits within their assigned cluster compared to other clusters. This is useful 	because human performance data tends to be continuous and overlapping; silhouette helps reveal whether the 		model is forcing unnatural separations.
-- Davies–Bouldin Index (DBI): A complementary metric that evaluates intra-cluster similarity versus inter-cluster separation. DBI is 			sensitive to cluster overlap — a common situation in HR performance — and often exposes hidden structure that 	silhouette alone cannot capture.
+- **Silhouette Score:** Measures how well each employee fits within their assigned cluster compared to other clusters. This is useful 	because human performance data tends to be continuous and overlapping; silhouette helps reveal whether the 		model is forcing unnatural separations.
+- **Davies–Bouldin Index (DBI):** A complementary metric that evaluates intra-cluster similarity versus inter-cluster separation. DBI is 			sensitive to cluster overlap — a common situation in HR performance — and often exposes hidden structure that 	silhouette alone cannot capture.
 
 ### Supervised Evaluation (tree-based and linear models)
 
-- ROC-AUC: Measures the model’s ability to distinguish between eligible and not eligible employees across thresholds. 		ROC-AUC is stable under class imbalance and allows fair comparison across tree-based and linear models.
-- F1-Score: Since the target is imbalanced, F1 provides a balanced measure of precision and recall. It prevents the model from achieving high accuracy by simply predicting the majority class.
-- Confusion Matrix: HR needs visibility into false positives (promoting the wrong person) and false negatives (overlooking eligible talent). The confusion matrix shows these error types clearly and supports transparent HR decision-making.
-- Recall: Missing eligible employees (false negatives) is costlier for HR than flagging someone incorrectly. High recall ensures the model captures as many genuinely promotable employees as possible.
-- Precision: Precision ensures the model’s “eligible” predictions are trustworthy. High precision reduces wasted time and resources on reviewing or promoting employees who are not truly ready.
+- **ROC-AUC:** Measures the model’s ability to distinguish between eligible and not eligible employees across thresholds. 		ROC-AUC is stable under class imbalance and allows fair comparison across tree-based and linear models.
+- **F1-Score:** Since the target is imbalanced, F1 provides a balanced measure of precision and recall. It prevents the model from achieving high accuracy by simply predicting the majority class.
+- **Confusion Matrix:** HR needs visibility into false positives (promoting the wrong person) and false negatives (overlooking eligible talent). The confusion matrix shows these error types clearly and supports transparent HR decision-making.
+- **Recall:** Missing eligible employees (false negatives) is costlier for HR than flagging someone incorrectly. High recall ensures the model captures as many genuinely promotable employees as possible.
+- **Precision:** Precision ensures the model’s “eligible” predictions are trustworthy. High precision reduces wasted time and resources on reviewing or promoting employees who are not truly ready.
 
 
 
