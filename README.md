@@ -154,7 +154,7 @@ Before evaluating the machine learning models, it’s important to define how mo
 
 ## **Model train and test**
 
-### Tree-based models
+### **Tree-based models**
 
 This section evaluates the performance of three tree-based classification models, which is Decision Tree, Random Forest, and XGBoost, using an 80:20 train–test split. Initial results showed clear overfitting across baseline models, requiring tuning to improve generalization.
 
@@ -181,7 +181,7 @@ This section evaluates the performance of three tree-based classification models
 
 The tuned Random Forest achieved the strongest performance among all tested models, offering the best balance of F1, recall, and ROC-AUC on the test set. It stands as the most reliable model for predicting promotion eligibility at this stage.
 
-### Linear models
+### **Linear models**
 
 This experiment evaluates two linear classification algorithms, Logistic Regression and Support Vector Machine (SVM), using a dataset where class imbalance was first addressed through SMOTE. Because linear models are sensitive to multicollinearity, highly correlated features were removed prior to training.
 
@@ -203,7 +203,47 @@ This experiment evaluates two linear classification algorithms, Logistic Regress
 
 Across all linear-model experiments, the default SVM model provided the strongest and most stable results. Logistic Regression showed limited predictive strength, while SVM consistently demonstrated better recall, F1-score, and ROC-AUC, making it the most dependable linear approach for this dataset.
 
+### **Unsupervised learning**
 
+This section explores clustering methods to uncover natural groupings of employee performance profiles. The analysis was conducted on two datasets: one using all available features and another using a selected subset after removing highly correlated variables.
+
+#### Feature selection
+
+To reduce noise and avoid distortion in cluster formation, several highly correlated features were removed for the reduced-feature experiment:
+- Performance_Index
+- Training_Hours
+Two datasets were then tested: full features vs. selected features.
+
+#### Clustering models used
+
+Several unsupervised algorithms were evaluated to identify the most meaningful employee segments:
+- K-Means
+- Gaussian Mixture Model (GMM)
+- K-Medoids
+
+#### Optimal K selection
+
+The optimal number of clusters was determined using the Elbow Method, revealing that K = 5 produced the clearest and most stable segmentation structure.
+
+<img width="600" height="388" alt="Unsupervised models evaluation" src="https://github.com/user-attachments/assets/fe83640f-5157-4628-96f0-109f29de4d54" />
+
+#### Model Evaluation
+- **K-Means:** Achieved the highest overall Silhouette Score across K values. Produced consistently lower DBI scores, indicating better-defined and more compact clusters. At K = 5, K-Means showed the strongest balance between cluster separation and cohesion, leading to stable and meaningful cluster structures.
+- **Gaussian Mixture Model (GMM):** Demonstrated lower Silhouette Scores than K-Means across nearly all K values. DBI scores were significantly higher, suggesting loose, less distinct clusters. Cluster boundaries tended to overlap more due to the probabilistic nature of GMM, reducing interpretability.
+- **K-Medoids:** Performed better than GMM but still slightly weaker than K-Means. Silhouette Scores were moderate but did not surpass K-Means for any K. DBI values were acceptable but consistently higher than K-Means, indicating less compact clusters.
+
+#### Conclusion
+
+Across all tested algorithms, K-Means with K = 5 delivered the most coherent, interpretable, and well-separated clusters. This makes it the most suitable unsupervised method for segmenting employee performance profiles in this dataset.
+
+#### Cluster Interpretation
+
+Using PCA visualizations and radar charts, the best-performing K-Means model (K = 5) revealed five distinct employee segments, each representing different talent profiles:
+- **Cluster 0 — Emerging High Performers:** Strong technical capability but still require leadership development.
+- **Cluster 1 — Leadership-Strong, Performance-Moderate:** Employees with good leadership presence but needing improvement in execution skills.
+- **Cluster 2 — Consistent Low Performers:** Require coaching, targeted training, or potential role reassessment.
+- **Cluster 3 — Stable Operational Backbone:** Reliable, consistent performers who maintain day-to-day output.
+- **Cluster 4 — Distinct High-Outliers:** Unique high-performing individuals with specialty strengths; ideal for strategic roles.
 
 
 
