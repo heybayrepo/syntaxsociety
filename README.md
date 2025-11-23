@@ -46,7 +46,7 @@ These challenges prevent HR from reliably identifying employees with genuine pot
 
 syntaxsociety
 
-## **Repo structure:**
+### **Repo structure:**
 
 ```bash
 📁 syntaxsociety/
@@ -57,7 +57,7 @@ syntaxsociety
 └── README.md        → Project documentation & collaboration guide
 ```
 
-## **Clone the repository**
+### **Clone the repository**
 - *git clone https://github.com/heybayrepo/syntaxsociety.git*
 - *cd syntaxsociety*
 
@@ -68,14 +68,14 @@ syntaxsociety
 Talent Promotion Dataset provided by Rakamin Academy.
 Dataset is stored in this repository.
 
-**Structure**
+### Structure
 - Rows: 1000
 - Columns: 10
 - Target Variable: Promotion_Eligible
 	0 → Not eligible
 	1 → Eligible
 
-**Key Issues Identified During EDA**
+### Key Issues Identified During EDA
 - 449 missing values
 - Implausible values:
 	Negative age
@@ -89,18 +89,18 @@ These issues were addressed through imputation, outlier removal, and removal of 
 
 ## **Data Cleaning & Preprocessing**
 
-1. Outlier Handling
+### Outlier Handling
 	- Removed ~1.3% data entries with extreme values (Age, Training Hours).
 	- Dropped Years_at_Company due to consistent logical errors.
 
-3. Missing Value Treatment
+### Missing Value Treatment
 	- Numeric → Median
  	- Categorical → Mode
   	- Result: 0 missing values.
 
 <img width="600" height="338" alt="Feature selection strategy" src="https://github.com/user-attachments/assets/b568aef9-dc89-40c5-8a4d-1ed052c0cd36" />
 
-4. Feature Selection
+### Feature Selection
 
 Dropped:
 - Employee_ID
@@ -116,7 +116,7 @@ Used:
 - Training_Hours
 - Promotion_Eligible
 
-5. Feature Engineering
+### Feature Engineering
 
 Two new features were created to reduce bias and improve representational power:
 - Leadership_Index = (Leadership Score + Peer Review Score) / 2
@@ -126,7 +126,7 @@ Two new features were created to reduce bias and improve representational power:
 - Leadership_Influence = Peer_Review_Score_scaled / (Leadership_Score_scaled + 1)
 - Performance_Consistency = Performance_Score x Projects_Handled_scaled
 
-6. Standardization & Balancing
+### Standardization & Balancing
 	•	All numeric features were standardized.
 	•	Target kept as binary.
 	•	SMOTE applied to balance the dataset.
