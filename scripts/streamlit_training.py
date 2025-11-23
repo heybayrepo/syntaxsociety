@@ -9,3 +9,10 @@ st.title("The Promotion Paradox")
 st.header('Fixing Biased Talent Promotion Decisions Through Data-Driven HR Analytics')
 st.write("A project by Syntax Society")    
 
+col1, col2 = st.columns(2)
+with col1:
+    st.title("Syntax Society")
+with col2:
+    st.header("testing")
+    
+
