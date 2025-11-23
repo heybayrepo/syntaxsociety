@@ -245,7 +245,27 @@ Using PCA visualizations and radar charts, the best-performing K-Means model (K 
 - **Cluster 3 — Stable Operational Backbone:** Reliable, consistent performers who maintain day-to-day output.
 - **Cluster 4 — Distinct High-Outliers:** Unique high-performing individuals with specialty strengths; ideal for strategic roles.
 
+<img width="600" height="388" alt="Modeling results and summary" src="https://github.com/user-attachments/assets/1c2e9238-cf92-469a-bf44-3011fb688381" />
 
+## **Model selection summary**
+
+Across all modeling experiments — tree-based models, linear models, and unsupervised clustering — the dataset showed patterns that were more continuous than sharply separable. As a result, most supervised models struggled to produce reliable predictions, even after tuning.
+
+Based on all experiment, the most suitable model for this project is K-Means with K = 5. The reasons are:
+1. It produced the most stable, most compact, and most interpretable cluster structure.
+2. The resulting 5 clusters align naturally with HR personas, such as emerging high performers, leadership-strong profiles, consistent low performers, stable operators, and specialized high-outliers.
+3. Metrics showed K-Means was more reliable than K-Medoids and significantly better than GMM.
+4. Unlike supervised models — which all struggled due to weak promotion-eligibility signals — clustering captured continuous performance patterns more effectively.
+
+## **Practical value for HR**
+
+The five clusters uncovered through K-Means don’t just describe statistical groupings, they map directly onto real talent personas inside the organization. Each segment helps HR see the workforce with new clarity. Instead of relying on intuition or fragmented data, HR can finally understand who needs what and why.
+
+With these clusters, HR can:
+- **Plan succession pipelines more confidently:** Emerging high performers and leadership-ready profiles can be identified early, allowing HR to prepare them for future roles instead of waiting for annual reviews or manager referrals.
+- **Design targeted development programs:** Instead of one-size-fits-all training, HR can tailor interventions: coaching for consistent low performers, leadership development for Cluster 0 and 1, or strategic project placement for high-outlier talent.
+- **Make more informed placement and staffing decisions:** Teams can be balanced more intentionally by distributing strengths and mitigating weaknesses based on cluster characteristics.
+- **Spot high-potential and at-risk employees before issues surface:** Clusters reveal patterns that often remain hidden: who is quietly excelling, who is stagnating, and who may require closer support, all without relying solely on subjective manager evaluations.
 
 
 
