@@ -152,10 +152,34 @@ Before evaluating the machine learning models, it’s important to define how mo
 - **Recall:** Missing eligible employees (false negatives) is costlier for HR than flagging someone incorrectly. High recall ensures the model captures as many genuinely promotable employees as possible.
 - **Precision:** Precision ensures the model’s “eligible” predictions are trustworthy. High precision reduces wasted time and resources on reviewing or promoting employees who are not truly ready.
 
+## **Model train and test**
 
+### Tree-based models
 
+This section evaluates the performance of three tree-based classification models, which is Decision Tree, Random Forest, and XGBoost, using an 80:20 train–test split. Initial results showed clear overfitting across baseline models, requiring tuning to improve generalization.
 
+<img width="600" height="388" alt="Correlation, split data and target check" src="https://github.com/user-attachments/assets/05e99ca3-3b73-4da8-b9c5-705e39c67e80" />
 
+#### Baseline model
+**Decision Tree (default):** Achieved 100% accuracy on training data but low test performance (F1 32%, ROC-AUC 52%), indicating strong overfitting. This is our baseline model.
+**Random Forest & XGBoost (default):** Both models also showed overfitting with perfect train scores but weak generalization on the test set.
+
+#### Tuned model
+
+- **Tuned Decision Tree:** Overfitting was reduced, but overall performance remained low. F1 (Test): 17% | Recall: 12%
+- **Tuned Random Forest:** Demonstrated the best generalization and overall balance across metrics. F1 (Test): 36% | Recall: 45% | ROC-AUC: 54%
+- **Tuned XGBoost:** Tuning did not improve performance; still underperformed. F1 (Test): 17% | Recall: 12%
+
+#### Other model
+
+- **Gaussian Naive Bayes:** Weak performance and very low F1 scores.
+- **Neural Network (shallow):** Modest accuracy but still affected by underfitting and low Recall/F1.
+
+<img width="600" height="338" alt="Best classification model" src="https://github.com/user-attachments/assets/07657a5d-e68a-425d-853e-491dc25e2f35" />
+
+#### Conclusion
+
+The tuned Random Forest achieved the strongest performance among all tested models, offering the best balance of F1, recall, and ROC-AUC on the test set. It stands as the most reliable model for predicting promotion eligibility at this stage.
 
 
 
