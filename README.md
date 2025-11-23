@@ -239,11 +239,11 @@ Across all tested algorithms, K-Means with K = 5 delivered the most coherent, in
 #### Cluster Interpretation
 
 Using PCA visualizations and radar charts, the best-performing K-Means model (K = 5) revealed five distinct employee segments, each representing different talent profiles:
-- **Cluster 0 — Emerging High Performers:** Strong technical capability but still require leadership development.
-- **Cluster 1 — Leadership-Strong, Performance-Moderate:** Employees with good leadership presence but needing improvement in execution skills.
-- **Cluster 2 — Consistent Low Performers:** Require coaching, targeted training, or potential role reassessment.
-- **Cluster 3 — Stable Operational Backbone:** Reliable, consistent performers who maintain day-to-day output.
-- **Cluster 4 — Distinct High-Outliers:** Unique high-performing individuals with specialty strengths; ideal for strategic roles.
+- **Cluster 0 — Emerging Performers:** Strong technical capability but still require leadership development.
+- **Cluster 1 — Leadership-Oriented:** Employees with good leadership presence but needing improvement in execution skills.
+- **Cluster 2 — Low Consistent Performers:** Require coaching, targeted training, or potential role reassessment.
+- **Cluster 3 — Reliable Core Talent:** Reliable, consistent performers who maintain day-to-day output.
+- **Cluster 4 — Strategic High Performers:** Unique high-performing individuals with specialty strengths; ideal for strategic roles.
 
 <img width="600" height="388" alt="Modeling results and summary" src="https://github.com/user-attachments/assets/1c2e9238-cf92-469a-bf44-3011fb688381" />
 
