@@ -11,6 +11,37 @@
 - Febiansyah Ahnaf (Data Scientist)
 - Keisya Nisrani (Data Scientist)
 
+## **Project overview**
+
+This project focuses on predicting employee promotion eligibility using structured HR data such as performance scores, leadership metrics, peer review scores, project experience, and training hours. Through data cleaning, feature engineering, and machine learning modeling, this project aims to support HR with a fair, objective, transparent decision-support system.
+
+<img width="600" height="338" alt="HR talent industry overview" src="https://github.com/user-attachments/assets/46066438-0428-4aba-8b7f-5066100a0ca9" />
+
+## **Business understanding**
+
+Promotion decisions play a critical role in shaping employee motivation, retention, and long-term organizational health. When the promotion process is subjective or inconsistent, high-potential employees may be overlooked, leading to frustration, disengagement, and increased turnover costs.
+
+In many organizations, including the context represented by this dataset, HR teams still rely heavily on manual data entry, peer impressions, and loosely defined criteria. These gaps make it difficult to identify talent objectively and fairly. A data-driven approach is needed to support HR in building a transparent, consistent, and equitable promotion framework.
+
+## **Problem statement**
+
+Exploratory analysis of the Talent Promotion dataset reveals several issues that directly undermine fair and accurate promotion decisions:
+
+- Data quality problems, including missing values, implausible ages, unrealistic training records, and inconsistent work-tenure information.
+- Bias in promotion criteria, where decisions appear heavily influenced by only a few features such as peer review score or project count.
+- Lack of standardization, making it difficult to compare employees on equal footing.
+- Imbalanced promotion outcomes, with only 29% of employees marked as eligible in the raw data.
+
+These challenges prevent HR from reliably identifying employees with genuine potential for advancement. A robust machine learning model is required to clean the data, learn meaningful performance patterns, and offer a more objective prediction of promotion eligibility.
+
+<img width="600" height="338" alt="Gaps that need to be addressed" src="https://github.com/user-attachments/assets/d9299cbe-8a33-4901-83c0-de12236aa737" />
+
+## **The main objectives are to:**
+
+1. Develop and evaluate multiple ML models for promotion prediction.
+2. Engineer new features that better capture employee performance and potential.
+3. Deliver a transparent, fair, and explainable model to support HR decision-making.
+
 ## **Repository:** 
 
 syntaxsociety
@@ -29,27 +60,6 @@ syntaxsociety
 ## **Clone the repository**
 - *git clone https://github.com/heybayrepo/syntaxsociety.git*
 - *cd syntaxsociety*
-
-## **Project Overview**
-
-<img width="600" height="338" alt="HR talent industry overview" src="https://github.com/user-attachments/assets/46066438-0428-4aba-8b7f-5066100a0ca9" />
-
-This project focuses on predicting employee promotion eligibility using structured HR data such as performance scores, leadership metrics, peer review scores, project experience, and training hours.
-
-The motivation comes from a clear gap identified in the HR workflow:
-- Manual data entry → numerous inconsistencies and anomalies
-- Subjective judgments → biased promotion decisions
-- Lack of standardized, explainable evaluation tools
-
-Through data cleaning, feature engineering, and machine learning modeling, this project aims to support HR with a fair, objective, transparent decision-support system.
-
-<img width="600" height="338" alt="Gaps that need to be addressed" src="https://github.com/user-attachments/assets/d9299cbe-8a33-4901-83c0-de12236aa737" />
-
-## **The main objectives are to:**
-
-	1.	Develop and evaluate multiple ML models for promotion prediction.
-	2.	Engineer new features that better capture employee performance and potential.
-	3.	Deliver a transparent, fair, and explainable model to support HR decision-making.
 
 ## **Dataset Summary**
 
@@ -115,7 +125,6 @@ Two new features were created to reduce bias and improve representational power:
 - Growth_Momentum = Projects_Handled_scaled / (Training_Hours_scaled + 1)
 - Leadership_Influence = Peer_Review_Score_scaled / (Leadership_Score_scaled + 1)
 - Performance_Consistency = Performance_Score x Projects_Handled_scaled
-
 
 6. Standardization & Balancing
 	•	All numeric features were standardized.
