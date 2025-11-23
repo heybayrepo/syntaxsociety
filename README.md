@@ -2,7 +2,7 @@
 
 ## **By:** Syntax Society
 
-<img width="1497" height="841" alt="Screenshot 2025-11-21 at 14 41 40" src="https://github.com/user-attachments/assets/35e726c9-bfb6-49f1-9517-0fdec9c2a176" />
+<img width="600" height="338" alt="Screenshot 2025-11-21 at 14 41 40" src="https://github.com/user-attachments/assets/35e726c9-bfb6-49f1-9517-0fdec9c2a176" />
 
 ## **Team:**
 - Bayu Maitra (Project Manager)
@@ -17,7 +17,7 @@ syntaxsociety
 
 ## **Project Overview**
 
-<img width="851" height="477" alt="Screenshot 2025-11-22 at 12 02 47" src="https://github.com/user-attachments/assets/46066438-0428-4aba-8b7f-5066100a0ca9" />
+<img width="600" height="338" alt="Screenshot 2025-11-22 at 12 02 47" src="https://github.com/user-attachments/assets/46066438-0428-4aba-8b7f-5066100a0ca9" />
 
 This project focuses on predicting employee promotion eligibility using structured HR data such as performance scores, leadership metrics, peer review scores, project experience, and training hours.
 
@@ -28,7 +28,7 @@ The motivation comes from a clear gap identified in the HR workflow:
 
 Through data cleaning, feature engineering, and machine learning modeling, this project aims to support HR with a fair, objective, transparent decision-support system.
 
-<img width="850" height="475" alt="Screenshot 2025-11-22 at 12 05 42" src="https://github.com/user-attachments/assets/d9299cbe-8a33-4901-83c0-de12236aa737" />
+<img width="600" height="338" alt="Screenshot 2025-11-22 at 12 05 42" src="https://github.com/user-attachments/assets/d9299cbe-8a33-4901-83c0-de12236aa737" />
 
 ## **Repo structure:**
 
@@ -53,7 +53,7 @@ Through data cleaning, feature engineering, and machine learning modeling, this 
 
 ## **Dataset Summary**
 
-<img width="850" height="476" alt="Screenshot 2025-11-22 at 12 08 30" src="https://github.com/user-attachments/assets/8c183a11-99f3-433f-a926-b288196faa66" />
+<img width="600" height="338" alt="Screenshot 2025-11-22 at 12 08 30" src="https://github.com/user-attachments/assets/8c183a11-99f3-433f-a926-b288196faa66" />
 
 Talent Promotion Dataset provided by Rakamin Academy.
 Dataset is stored in this repository.
@@ -88,7 +88,7 @@ These issues were addressed through imputation, outlier removal, and removal of 
  	- Categorical → Mode
   	- Result: 0 missing values.
 
-<img width="851" height="477" alt="Screenshot 2025-11-22 at 12 10 59" src="https://github.com/user-attachments/assets/b568aef9-dc89-40c5-8a4d-1ed052c0cd36" />
+<img width="600" height="338" alt="Screenshot 2025-11-22 at 12 10 59" src="https://github.com/user-attachments/assets/b568aef9-dc89-40c5-8a4d-1ed052c0cd36" />
 
 4. Feature Selection
 
@@ -122,5 +122,5 @@ Two new features were created to reduce bias and improve representational power:
 	•	Target kept as binary.
 	•	SMOTE applied to balance the dataset.
 
-<img width="850" height="475" alt="Screenshot 2025-11-22 at 12 16 22" src="https://github.com/user-attachments/assets/6dd10242-86b8-4f4b-a1af-b227244781d8" />
+<img width="600" height="338" alt="Screenshot 2025-11-22 at 12 16 22" src="https://github.com/user-attachments/assets/6dd10242-86b8-4f4b-a1af-b227244781d8" />
 
