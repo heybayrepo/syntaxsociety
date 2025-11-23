@@ -181,6 +181,28 @@ This section evaluates the performance of three tree-based classification models
 
 The tuned Random Forest achieved the strongest performance among all tested models, offering the best balance of F1, recall, and ROC-AUC on the test set. It stands as the most reliable model for predicting promotion eligibility at this stage.
 
+### Linear models
+
+This experiment evaluates two linear classification algorithms, Logistic Regression and Support Vector Machine (SVM), using a dataset where class imbalance was first addressed through SMOTE. Because linear models are sensitive to multicollinearity, highly correlated features were removed prior to training.
+
+#### Preprocessing for linear models
+- **Feature Selection:** Removed highly correlated variables (Performance_Score, Training_Hours, Projects_Handled, Peer_Review_Score) to avoid multicollinearity issues common in linear models.
+- **Train–Test Split:** 80% training, 20% testing.
+- **Class Balancing:** Applied SMOTE, balancing Eligible vs. Not Eligible from 221:568 → 568:568 in the training set.
+
+#### Model performance
+
+- **Logistic Regression (Default):** Achieved modest performance with F1 and Recall around 32%, and ROC-AUC 52%. Cross-validation helped stabilize results but overall predictive power remained limited.
+- **Logistic Regression (Tuned):** Hyperparameter tuning slightly improved recall (33%) but did not meaningfully improve F1 or ROC-AUC (52%). Performance remained similar to the baseline.
+- **SVM (Default):** Delivered the strongest results among all linear models, achieving: F1 (Test): 60%, Recall (Test): 60%, ROC-AUC (Test): 57%. This model demonstrated the best generalization and the most balanced predictive behavior.
+- **SVM (Tuned):** Tuning did not outperform the default model, reducing performance to: F1 (Test): 47%, Recall (Test): 56%, ROC-AUC (Test): 53%. Default SVM remained more reliable.
+
+<img width="600" height="338" alt="Best linear model" src="https://github.com/user-attachments/assets/9d21a52b-66b7-47de-8bf7-89716c0c0907" />
+
+#### Conclusion
+
+Across all linear-model experiments, the default SVM model provided the strongest and most stable results. Logistic Regression showed limited predictive strength, while SVM consistently demonstrated better recall, F1-score, and ROC-AUC, making it the most dependable linear approach for this dataset.
+
 
 
 
