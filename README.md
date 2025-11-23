@@ -1,4 +1,4 @@
-# **The Promotion Paradox: Fixing Biased Talent Promotion Decisions Through Data-Driven HR Analytics**
+# **The Promotion Paradox: Fixing biased talent promotion decisions through data-driven HR analytics**
 
 ## **By:** Syntax Society
 
