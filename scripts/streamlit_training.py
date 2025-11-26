@@ -73,7 +73,7 @@ with st.container():
         <div style="
             padding:10px 16px;
             border-radius:10px;
-            background-color:#2e307d;   /* warna ungu gelap solid */
+            background-color:#2e307d;  
             border:1px solid rgba(255,255,255,0.2);
             margin-top:10px;
             display:block;
