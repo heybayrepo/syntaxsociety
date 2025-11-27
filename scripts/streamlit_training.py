@@ -16,9 +16,29 @@ page_bg = """
 st.markdown(page_bg, unsafe_allow_html=True)
 
 # =========================
-# Header Section
+# Section
 # ========================= 
 
-st.markdown('# **HR Intelligence Hub**')
-st.write('### *A centralized view of Rakamin workforce performance and potential.*')
-st.write('Created by Syntax Society')    
+header = st.container()
+dataset = st.container()
+features = st.container()
+model_training = st.container()
+
+# =========================
+# Load dataset
+# ========================= 
+
+df = pd.read_csv('dataset_clustered_dashboard.csv')
+
+# =========================
+# Title and Description
+# ========================= 
+
+with header:
+    st.markdown('# **Welcome to HR Intelligence Hub**')
+    st.write('### *A centralized view of Rakamin workforce performance and potential.*')
+    st.write('*Created by Syntax Society*')    
+
+with dataset:
+    st.markdown('### **Rakamin Talent Promotion**')
+    st.dataframe(df)
