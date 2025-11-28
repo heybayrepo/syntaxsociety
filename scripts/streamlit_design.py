@@ -548,58 +548,32 @@ desc_html = f"""
 
 st.markdown(desc_html, unsafe_allow_html=True)
 
-import html
-
 # =========================================
-# CLEANER — Fully escape HTML safely
+# CLEAN TEXT (simple)
 # =========================================
-def clean_text(raw):
+def clean_text_simple(raw):
     if pd.isna(raw):
         return ""
-    raw = str(raw)
-    
-    # Escape ALL HTML-related characters
-    cleaned = html.escape(raw)
-    
-    # Convert newline to <br>
-    cleaned = cleaned.replace("\n", "<br>")
-    
-    return cleaned
+    return str(raw).replace("\n", "<br>").strip()
 
-
-# Clean both texts safely
-hr_text = clean_text(emp["HR_Recommendations"])
-program_text = clean_text(emp["HR_Program"])
+hr_text = clean_text_simple(emp["HR_Recommendations"])
+program_text = clean_text_simple(emp["HR_Program"])
 
 # =========================================
-# RENDER BOTH CARDS
+# CARD TEMPLATE FUNCTION
 # =========================================
-combined_cards_html = f"""
-<div style="width:100%; border:3px solid #2e307d; border-radius:12px;
-            padding:20px; margin-top:20px; background-color:rgba(255,255,255,0.10);
-            font-family:Inter, sans-serif;">
+def long_card(title, content):
+    return (
+        '<div style="width:100%; border:3px solid #2e307d; border-radius:12px;'
+        ' padding:20px; margin-top:20px; background-color:rgba(255,255,255,0.10);'
+        ' font-family:Inter, sans-serif;">'
+            f'<div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">{title}</div>'
+            f'<div style="font-size:20px; line-height:1.6; color:#dddddd;">{content}</div>'
+        '</div>'
+    )
 
-    <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
-        HR Recommendations
-    </div>
-
-    <div style="font-size:20px; line-height:1.6; color:#dddddd;">
-        {hr_text}
-    </div>
-</div>
-
-<div style="width:100%; border:3px solid #2e307d; border-radius:12px;
-            padding:20px; margin-top:20px; background-color:rgba(255,255,255,0.10);
-            font-family:Inter, sans-serif;">
-
-    <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
-        Recommended Development Program
-    </div>
-
-    <div style="font-size:20px; line-height:1.6; color:#dddddd;">
-        {program_text}
-    </div>
-</div>
-"""
-
-st.markdown(combined_cards_html, unsafe_allow_html=True)
+# =========================================
+# RENDER CARDS
+# =========================================
+st.markdown(long_card("HR Recommendations", hr_text), unsafe_allow_html=True)
+st.markdown(long_card("Recommended Development Program", program_text), unsafe_allow_html=True)
