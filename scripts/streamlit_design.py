@@ -88,24 +88,25 @@ with header:
 
     def overview_card(title, value):
         st.markdown(
-         f"""
+        f"""
             <div style="
                 border: 3px solid #2e307d;
                 border-radius: 12px;
                 padding: 16px;
                 margin-bottom: 15px;
-                background-color: rgba(255,255,255,0.10);
-         ">
-            <h3 style="margin:0; padding:0; color:white; font-size:22px;">{title}</h3>
-            <div style="margin-top:10px;">
-                <span style="font-size:28px; font-weight:300; color:white;">
-                    {value}
-                </span>
+                background-color: #2e307d;
+            ">
+                <h3 style="margin:0; padding:0; color:white; font-size:22px;">{title}</h3>
+                <div style="margin-top:10px;">
+                    <span style="font-size:28px; font-weight:300; color:white;">
+                        {value}
+                    </span>
+                </div>
             </div>
-        </div>
         """,
         unsafe_allow_html=True
-    )
+        )
+
 
 # ---- COLUMN A ----
 with colA:
@@ -163,7 +164,7 @@ rows_html = "".join(rows)
 
 card_html = (
     '<div style="width:100%;border:3px solid #2e307d;border-radius:12px;'
-    'padding:20px;margin-top:10px;background-color:rgba(255,255,255,0.10);'
+    'padding:20px;margin-top:10px;background-color:#2e307d;'
     'font-family:Inter, sans-serif;">'
     '<div style="font-size:22px;font-weight:700;margin-bottom:15px;color:white;">'
     'Talent Count by Position Level'
@@ -247,7 +248,7 @@ elif category == 'Best Potential':
     )
 
 # =========================
-# Average Overview
+# Average Indexes
 # ========================= 
 
 st.markdown('## ⚖️ Average Indexes')
@@ -265,9 +266,11 @@ def metric_card(title, value):
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 15px;
-            background-color: rgba(255,255,255,0.10);
+            background-color: #2e307d;
         ">
-            <h3 style="margin:0; padding:0; color:white; font-size:22px;">{title}</h3>
+            <h3 style="margin:0; padding:0; color:white; font-size:22px;">
+                {title}
+            </h3>
             <div style="margin-top:10px;">
                 <span style="font-size:26px; font-weight:300; color:white;">
                     {value}
@@ -376,7 +379,7 @@ elif risk_category == 'Low Potential':
 st.markdown("## 🔎 Talent Selector")
 
 # =============================================
-# 1. EMPLOYEE PICKER
+# 1. TALENT PICKER
 # =============================================
 
 emp_id = st.selectbox(
@@ -397,7 +400,7 @@ def small_card(title, value):
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 15px;
-            background-color: rgba(255,255,255,0.10);
+            background-color: #2e307d;
         ">
             <h3 style="margin:0; padding:0; color:white; font-size:20px;">{title}</h3>
             <div style="margin-top:10px;">
@@ -470,7 +473,7 @@ rows_html = "".join(rows)
 # card wrapper — identical style to Talent Count card
 card_html = (
     '<div style="width:100%; border:3px solid #2e307d; border-radius:12px; '
-    'padding:20px; margin-top:10px; background-color:rgba(255,255,255,0.10); '
+    'padding:20px; margin-top:10px; background-color:#2e307d; '
     'font-family:Inter, sans-serif;">'
     '<div style="font-size:22px; font-weight:700; margin-bottom:15px; color:white;">'
     'Individual vs Company Average'
@@ -494,7 +497,7 @@ def info_card(title, value):
             border-radius:12px;
             padding:16px;
             margin-bottom:15px;
-            background-color:rgba(255,255,255,0.10);
+            background-color:#2e307d;
         ">
             <h3 style="margin:0; padding:0; color:white; font-size:20px;">
                 {title}
@@ -534,7 +537,7 @@ desc_html = f"""
     border-radius:12px;
     padding:20px;
     margin-top:10px;
-    background-color:rgba(255,255,255,0.10);
+    background-color:#2e307d;
     font-family:Inter, sans-serif;
 ">
     <div style="font-size:22px; font-weight:700; margin-bottom:15px; color:white;">
@@ -547,6 +550,8 @@ desc_html = f"""
 """
 
 st.markdown(desc_html, unsafe_allow_html=True)
+
+st.markdown('## 💡 HR Insight')
 
 # =========================================
 # CLEAN TEXT (simple)
@@ -565,10 +570,10 @@ program_text = clean_text_simple(emp["HR_Program"])
 def long_card(title, content):
     return (
         '<div style="width:100%; border:3px solid #2e307d; border-radius:12px;'
-        ' padding:20px; margin-top:20px; background-color:rgba(255,255,255,0.10);'
+        ' padding:20px; margin-top:20px; background-color:#00bf63;'
         ' font-family:Inter, sans-serif;">'
             f'<div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">{title}</div>'
-            f'<div style="font-size:20px; line-height:1.6; color:#dddddd;">{content}</div>'
+            f'<div style="font-size:20px; line-height:1.6; color:white;">{content}</div>'
         '</div>'
     )
 
