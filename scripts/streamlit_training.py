@@ -370,3 +370,112 @@ elif risk_category == 'Low Potential':
         hide_index=True,
         use_container_width=True
     )
+
+# =============================================
+# TALENT HIGHLIGHT SECTION
+# =============================================
+
+st.markdown("### 🔎 Talent Selector")
+
+# =============================================
+# 1. EMPLOYEE PICKER
+# =============================================
+
+emp_id = st.selectbox(
+    "Select Employee ID:",
+    df["Employee_ID"].unique(),
+    key="highlight_picker"
+)
+
+# extract selected row
+emp = df[df["Employee_ID"] == emp_id].iloc[0]
+
+# helper: small stat card
+def small_card(title, value):
+    st.markdown(
+        f"""
+        <div style="
+            border: 3px solid #2e307d;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 15px;
+            background-color: rgba(255,255,255,0.10);
+        ">
+            <h3 style="margin:0; padding:0; color:white; font-size:20px;">{title}</h3>
+            <div style="margin-top:10px;">
+                <span style="font-size:24px; font-weight:400; color:white;">
+                    {value}
+                </span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# =============================================
+# 2. CARD ROW 1 (Age, Position Level)
+# =============================================
+
+col1, col2 = st.columns(2)
+
+with col1:
+    small_card("Age", f"{int(emp['Age'])}")
+
+with col2:
+    small_card("Position Level", f"{emp['Current_Position_Level']}")
+
+# =============================================
+# 3. MEAN METRICS — COMPANY AVERAGES
+# =============================================
+
+avg_performance = df["Performance_Index"].mean()
+avg_leadership = df["Leadership_Index"].mean()
+avg_potential = df["Potential_Index"].mean()
+avg_projects = df["Projects_Handled"].mean()
+avg_peer = df["Peer_Review_Score"].mean()
+
+# =============================================
+# 4. CARD ROW 2 — 5 METRIC CARDS
+# =============================================
+
+# =========================================
+# INDIVIDUAL VS COMPANY AVERAGE — CARD VIEW
+# =========================================
+
+
+
+# compute all metrics needed
+metrics = [
+    ("Performance Index", emp["Performance_Index"], df["Performance_Index"].mean()),
+    ("Leadership Index", emp["Leadership_Index"], df["Leadership_Index"].mean()),
+    ("Potential Index", emp["Potential_Index"], df["Potential_Index"].mean()),
+    ("Projects Handled", emp["Projects_Handled"], df["Projects_Handled"].mean()),
+    ("Peer Review Score", emp["Peer_Review_Score"], df["Peer_Review_Score"].mean()),
+]
+
+# build rows HTML (compact padding)
+rows = []
+for title, val, avg in metrics:
+    rows.append(
+        '<div style="display:flex; justify-content:space-between; padding:6px 0;'
+        'border-bottom:1px solid rgba(255,255,255,0.06); font-family:Inter, sans-serif;">'
+        f'<div style="font-size:22px; font-weight:600; color:white;">{title}</div>'
+        f'<div style="font-size:22px; color:#dddddd;">{val:.1f}  |  Avg {avg:.1f}</div>'
+        '</div>'
+    )
+
+rows_html = "".join(rows)
+
+# card wrapper — identical style to Talent Count card
+card_html = (
+    '<div style="width:100%; border:3px solid #2e307d; border-radius:12px; '
+    'padding:20px; margin-top:10px; background-color:rgba(255,255,255,0.10); '
+    'font-family:Inter, sans-serif;">'
+    '<div style="font-size:22px; font-weight:700; margin-bottom:15px; color:white;">'
+    'Individual vs Company Average'
+    '</div>'
+    + rows_html +
+    '</div>'
+)
+
+st.markdown(card_html, unsafe_allow_html=True)
