@@ -80,7 +80,7 @@ with header:
 # TALENT OVERVIEW — 2 COLUMN CARDS
 # ============================
 
-    st.markdown("### 📸 Talent Overview")
+    st.markdown("## 📸 Talent Overview")
 
     colA, colB = st.columns(2)
 
@@ -176,7 +176,7 @@ st.markdown(card_html, unsafe_allow_html=True)
 # Top Talent
 # =========================
 
-st.markdown('### ⭐ Top Talent')
+st.markdown('## ⭐ Top Talent')
 
 # ===========================================================
 # TWO DROPDOWNS IN ONE ROW
@@ -248,7 +248,7 @@ elif category == 'Best Potential':
 # Average Overview
 # ========================= 
 
-st.markdown('## ⚖️ Average Index')
+st.markdown('## ⚖️ Average Indexes')
 
 col1, col2, col3 = st.columns(3)
 
@@ -301,11 +301,7 @@ with col3:
 # High Risk Talent
 # ========================= 
 
-# =========================
-# High Risk Talent
-# ========================= 
-
-st.markdown('### ⚠️ High Risk Talent')
+st.markdown('## ⚠️ High Risk Talent')
 
 # ===========================================================
 # TWO DROPDOWNS IN ONE ROW
@@ -375,7 +371,7 @@ elif risk_category == 'Low Potential':
 # TALENT HIGHLIGHT SECTION
 # =============================================
 
-st.markdown("### 🔎 Talent Selector")
+st.markdown("## 🔎 Talent Selector")
 
 # =============================================
 # 1. EMPLOYEE PICKER
@@ -415,6 +411,8 @@ def small_card(title, value):
 # =============================================
 # 2. CARD ROW 1 (Age, Position Level)
 # =============================================
+
+st.markdown('### Overview')
 
 col1, col2 = st.columns(2)
 
@@ -479,3 +477,69 @@ card_html = (
 )
 
 st.markdown(card_html, unsafe_allow_html=True)
+
+# ======================================================
+# CARD TEMPLATE: small (two-column)
+# ======================================================
+
+def info_card(title, value):
+    st.markdown(
+        f"""
+        <div style="
+            border:3px solid #2e307d;
+            border-radius:12px;
+            padding:16px;
+            margin-bottom:15px;
+            background-color:rgba(255,255,255,0.10);
+        ">
+            <h3 style="margin:0; padding:0; color:white; font-size:20px;">
+                {title}
+            </h3>
+            <div style="margin-top:10px;">
+                <span style="font-size:22px; font-weight:400; color:white;">
+                    {value}
+                </span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# ======================================================
+# ROW: CLUSTER + CHARACTERISTICS
+# ======================================================
+
+st.markdown('### Character')
+
+colC1, colC2 = st.columns(2)
+
+with colC1:
+    info_card("Cluster", emp["Cluster"])
+
+with colC2:
+    info_card("Characteristics", emp["Characteristics"])
+
+# ======================================================
+# FULL-WIDTH DESCRIPTION CARD
+# ======================================================
+
+desc_html = f"""
+<div style="
+    width:100%;
+    border:3px solid #2e307d;
+    border-radius:12px;
+    padding:20px;
+    margin-top:10px;
+    background-color:rgba(255,255,255,0.10);
+    font-family:Inter, sans-serif;
+">
+    <div style="font-size:22px; font-weight:700; margin-bottom:15px; color:white;">
+        Description
+    </div>
+    <div style="font-size:20px; color:#dddddd; line-height:1.5;">
+        {emp['Description']}
+    </div>
+</div>
+"""
+
+st.markdown(desc_html, unsafe_allow_html=True)
