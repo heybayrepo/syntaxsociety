@@ -43,6 +43,7 @@ table_css = """
 st.markdown(table_css, unsafe_allow_html=True)
 
 # === PAGE BACKGROUND ===
+
 page_bg = """
 <style>
 [data-testid="stAppViewContainer"] {
@@ -51,6 +52,7 @@ page_bg = """
 </style>
 """
 st.markdown(page_bg, unsafe_allow_html=True)
+
 
 # =========================
 # Section
