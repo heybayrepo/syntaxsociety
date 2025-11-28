@@ -222,7 +222,7 @@ if category == 'Best Performing':
         use_container_width=True
     )
 
-elif category == 'Best Leader':
+elif category == 'Best Leadership':
     ranked = df_filtered.sort_values('Leadership_Index', ascending=False).head(10)
     st.dataframe(
         ranked[
@@ -349,7 +349,7 @@ if risk_category == 'Low Performing':
         use_container_width=True
     )
 
-elif risk_category == 'Worst Leader':
+elif risk_category == 'Low Leadership':
     ranked = df_risk.sort_values('Leadership_Index', ascending=True).head(10)
     st.dataframe(
         ranked[
