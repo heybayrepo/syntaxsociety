@@ -442,8 +442,6 @@ avg_peer = df["Peer_Review_Score"].mean()
 # INDIVIDUAL VS COMPANY AVERAGE — CARD VIEW
 # =========================================
 
-
-
 # compute all metrics needed
 metrics = [
     ("Performance Index", emp["Performance_Index"], df["Performance_Index"].mean()),
@@ -456,11 +454,14 @@ metrics = [
 # build rows HTML (compact padding)
 rows = []
 for title, val, avg in metrics:
+    # warna dinamis: merah kalau karyawan < rata-rata
+    color = "#ff5757" if val < avg else "#dddddd"
+
     rows.append(
-        '<div style="display:flex; justify-content:space-between; padding:6px 0;'
-        'border-bottom:1px solid rgba(255,255,255,0.06); font-family:Inter, sans-serif;">'
+        f'<div style="display:flex; justify-content:space-between; padding:6px 0;'
+        f'border-bottom:1px solid rgba(255,255,255,0.06); font-family:Inter, sans-serif;">'
         f'<div style="font-size:22px; font-weight:600; color:white;">{title}</div>'
-        f'<div style="font-size:22px; color:#dddddd;">{val:.1f}  |  Avg {avg:.1f}</div>'
+        f'<div style="font-size:22px; color:{color};">{val:.1f}  |  Avg {avg:.1f}</div>'
         '</div>'
     )
 
@@ -479,6 +480,7 @@ card_html = (
 )
 
 st.markdown(card_html, unsafe_allow_html=True)
+st.markdown('*Note: Values in red indicate below company average.*')
 
 # ======================================================
 # CARD TEMPLATE: small (two-column)
