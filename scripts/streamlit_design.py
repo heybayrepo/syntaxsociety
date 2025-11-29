@@ -614,7 +614,7 @@ def clean_text_simple(raw):
     return str(raw).replace("\n", "<br>").strip()
 
 hr_text = clean_text_simple(emp["HR_Recommendations"])
-program_text = clean_text_simple(emp["HR_Program"])
+program_text = clean_text_simple(emp["HR_Programs"])
 
 # =========================================
 # CARD TEMPLATE FUNCTION
