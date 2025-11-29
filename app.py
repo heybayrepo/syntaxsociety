@@ -604,7 +604,6 @@ metrics = [
     ("Leadership Index", emp["Leadership_Index"], df["Leadership_Index"].mean()),
     ("Potential Index", emp["Potential_Index"], df["Potential_Index"].mean()),
     ("Projects Handled", emp["Projects_Handled"], df["Projects_Handled"].mean()),
-    ("Peer Review Score", emp["Peer_Review_Score"], df["Peer_Review_Score"].mean()),
 ]
 
 # build rows HTML (compact padding)
