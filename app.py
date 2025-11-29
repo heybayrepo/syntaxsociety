@@ -531,20 +531,9 @@ elif risk_category == 'Low Potential':
 
 st.markdown("## 🔎 Talent Selector")
 
-# =============================================
-# 1. TALENT PICKER
-# =============================================
-
-emp_id = st.selectbox(
-    "Select Employee ID:",
-    df["Employee_ID"].unique(),
-    key="highlight_picker"
-)
-
-# extract selected row
-emp = df[df["Employee_ID"] == emp_id].iloc[0]
-
-# helper: small stat card
+# ======================================================
+# 1. DEFINISIKAN small_card DULU (HARUS DI ATAS)
+# ======================================================
 def small_card(title, value):
     st.markdown(
         f"""
@@ -566,6 +555,37 @@ def small_card(title, value):
         unsafe_allow_html=True
     )
 
+# ======================================================
+# 2. DROPDOWN & INPUT MANUAL
+# ======================================================
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    emp_dropdown = st.selectbox(
+        "Select Employee ID:",
+        df["Employee_ID"].unique(),
+        key="dropdown_selector"
+    )
+
+with col2:
+    emp_manual = st.text_input(
+        "Or type Employee ID manually:",
+        placeholder="e.g., EMP0057",
+        key="manual_selector"
+    )
+
+# ======================================================
+# 3. PRIORITIZE: manual input if valid
+# ======================================================
+if emp_manual.strip() in df["Employee_ID"].values:
+    emp_id = emp_manual.strip()
+else:
+    emp_id = emp_dropdown
+
+# ======================================================
+# 4. LOAD SELECTED EMPLOYEE
+# ======================================================
+emp = df[df["Employee_ID"] == emp_id].iloc[0]
 # =============================================
 # 2. CARD ROW 1 (Age, Position Level)
 # =============================================
