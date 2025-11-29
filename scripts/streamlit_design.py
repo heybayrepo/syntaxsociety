@@ -175,6 +175,58 @@ card_html = (
 
 st.markdown(card_html, unsafe_allow_html=True)
 
+# ============================================
+# QUARTILE PERFORMANCE CARD
+# ============================================
+
+# hitung quartiles
+q1 = df['Performance_Index'].quantile(0.25)
+q2 = df['Performance_Index'].quantile(0.50)
+q3 = df['Performance_Index'].quantile(0.75)
+
+count_q1 = df[df['Performance_Index'] <= q1].shape[0]
+count_q4 = df[df['Performance_Index'] > q3].shape[0]
+count_mid = df[(df['Performance_Index'] > q1) & (df['Performance_Index'] <= q3)].shape[0]
+
+quartile_rows = f"""
+<div style="display:flex; justify-content:space-between; padding:6px 0;
+            border-bottom:1px solid rgba(255,255,255,0.08); font-family:Inter, sans-serif;">
+    <div style="font-size:22px; font-weight:600; color:white;">Low Performers (Q1)</div>
+    <div style="font-size:22px; color:#ff5757; font-weight:700;">{count_q1}</div>
+</div>
+
+<div style="display:flex; justify-content:space-between; padding:6px 0;
+            border-bottom:1px solid rgba(255,255,255,0.08); font-family:Inter, sans-serif;">
+    <div style="font-size:22px; font-weight:600; color:white;">High Performers (Q4)</div>
+    <div style="font-size:22px; color:#00bf63; font-weight:700;">{count_q4}</div>
+</div>
+
+<div style="display:flex; justify-content:space-between; padding:6px 0;
+            border-bottom:1px solid rgba(255,255,255,0.08); font-family:Inter, sans-serif;">
+    <div style="font-size:22px; font-weight:600; color:white;">Normal Performers (Q2 & Q3)</div>
+    <div style="font-size:22px; color:#dddddd; font-weight:500;">{count_mid}</div>
+</div>
+"""
+
+quartile_card = f"""
+<div style="
+    width:100%;
+    border:3px solid #2e307d;
+    border-radius:12px;
+    padding:20px;
+    margin-top:15px;
+    background-color:#2e307d;
+    font-family:Inter, sans-serif;
+">
+    <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
+        Total Talent per Performance Quartiles
+    </div>
+    {quartile_rows}
+</div>
+"""
+
+st.markdown(quartile_card, unsafe_allow_html=True)
+
 # =========================
 # Top Talent
 # =========================
