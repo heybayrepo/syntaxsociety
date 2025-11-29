@@ -4,6 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+import matplotlib.pyplot as plt
+import seaborn as sns
+import base64
+from io import BytesIO
+
 
 # === DEFINE CSS FIRST (WAJIB) ===
 table_css = """
@@ -226,6 +231,102 @@ quartile_card = f"""
 """
 
 st.markdown(quartile_card, unsafe_allow_html=True)
+
+def plot_to_base64(fig):
+    buf = BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight", dpi=120)
+    buf.seek(0)
+    encoded = base64.b64encode(buf.read()).decode()
+    plt.close(fig)
+    return encoded
+
+# ============================
+# AGE & POSITION LEVEL DISTRIBUTION (SIDE BY SIDE)
+# ============================
+
+colH1, colH2 = st.columns(2)
+
+# ============================
+# AGE HISTOGRAM
+# ============================
+with colH1:
+    fig, ax = plt.subplots(figsize=(5,3))
+    sns.histplot(df['Age'], kde=False, bins=15, color="#00bf63", ax=ax)
+
+    ax.set_title("Age Distribution", color="white")
+    ax.set_xlabel("Age", color="white")
+    ax.set_ylabel("Count", color="white")
+
+    # background style
+    ax.set_facecolor("#2e307d")
+    fig.patch.set_facecolor("#2e307d")
+    ax.tick_params(colors="white")
+
+    age_img = plot_to_base64(fig)
+
+    age_card = f"""
+    <div style="
+        width:100%;
+        border:3px solid #2e307d;
+        border-radius:12px;
+        padding:20px;
+        margin-top:15px;
+        background-color:#2e307d;
+        font-family:Inter, sans-serif;
+    ">
+        <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
+            Age Distribution
+        </div>
+        <img src="data:image/png;base64,{age_img}" style="width:100%; border-radius:10px;">
+    </div>
+    """
+
+    st.markdown(age_card, unsafe_allow_html=True)
+
+
+# ============================
+# POSITION LEVEL DISTRIBUTION
+# ============================
+with colH2:
+    fig, ax = plt.subplots(figsize=(5,3))
+
+    order = ["Junior", "Mid", "Senior", "Lead"]
+    sns.countplot(x=df["Current_Position_Level"], order=order, ax=ax, color="#00bf63")
+
+    ax.set_title("Position Level Distribution", color="white")
+    ax.set_xlabel("Position Level", color="white")
+    ax.set_ylabel("Count", color="white")
+
+    # styling
+    ax.set_facecolor("#2e307d")
+    fig.patch.set_facecolor("#2e307d")
+    ax.tick_params(colors="white")
+    for label in ax.get_xticklabels():
+        label.set_color("white")
+
+    pos_img = plot_to_base64(fig)
+
+    pos_card = f"""
+    <div style="
+        width:100%;
+        border:3px solid #2e307d;
+        border-radius:12px;
+        padding:20px;
+        margin-top:15px;
+        background-color:#2e307d;
+        font-family:Inter, sans-serif;
+    ">
+        <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
+            Position Level Distribution
+        </div>
+        <img src="data:image/png;base64,{pos_img}" style="width:100%; border-radius:10px;">
+    </div>
+    """
+
+    st.markdown(pos_card, unsafe_allow_html=True)
+
+
+
 
 # =========================
 # Top Talent
