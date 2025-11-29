@@ -67,7 +67,7 @@ model_training = st.container()
 # Load dataset
 # ========================= 
 
-df = pd.read_csv('dataset_clustered_dashboard.csv')
+df = pd.read_csv('scripts/dataset_clustered_dashboard.csv')
 
 # =========================
 # Title and Description
