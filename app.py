@@ -89,6 +89,7 @@ with header:
 
     st.markdown("## 📸 Talent Overview")
 
+
     colA, colB = st.columns(2)
 
     def overview_card(title, value):
@@ -180,153 +181,189 @@ card_html = (
 
 st.markdown(card_html, unsafe_allow_html=True)
 
-# ============================================
-# QUARTILE PERFORMANCE CARD
-# ============================================
+import matplotlib.pyplot as plt
+import seaborn as sns
+import base64
+from io import BytesIO
 
-# hitung quartiles
-q1 = df['Performance_Index'].quantile(0.25)
-q2 = df['Performance_Index'].quantile(0.50)
-q3 = df['Performance_Index'].quantile(0.75)
-
-count_q1 = df[df['Performance_Index'] <= q1].shape[0]
-count_q4 = df[df['Performance_Index'] > q3].shape[0]
-count_mid = df[(df['Performance_Index'] > q1) & (df['Performance_Index'] <= q3)].shape[0]
-
-quartile_rows = f"""
-<div style="display:flex; justify-content:space-between; padding:6px 0;
-            border-bottom:1px solid rgba(255,255,255,0.08); font-family:Inter, sans-serif;">
-    <div style="font-size:22px; font-weight:600; color:white;">Low Performers (Q1)</div>
-    <div style="font-size:22px; color:#ff5757; font-weight:700;">{count_q1}</div>
-</div>
-
-<div style="display:flex; justify-content:space-between; padding:6px 0;
-            border-bottom:1px solid rgba(255,255,255,0.08); font-family:Inter, sans-serif;">
-    <div style="font-size:22px; font-weight:600; color:white;">High Performers (Q4)</div>
-    <div style="font-size:22px; color:#00bf63; font-weight:700;">{count_q4}</div>
-</div>
-
-<div style="display:flex; justify-content:space-between; padding:6px 0;
-            border-bottom:1px solid rgba(255,255,255,0.08); font-family:Inter, sans-serif;">
-    <div style="font-size:22px; font-weight:600; color:white;">Normal Performers (Q2 & Q3)</div>
-    <div style="font-size:22px; color:#dddddd; font-weight:500;">{count_mid}</div>
-</div>
-"""
-
-quartile_card = f"""
-<div style="
-    width:100%;
-    border:3px solid #2e307d;
-    border-radius:12px;
-    padding:20px;
-    margin-top:15px;
-    background-color:#2e307d;
-    font-family:Inter, sans-serif;
-">
-    <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
-        Total Talent per Performance Quartiles
-    </div>
-    {quartile_rows}
-</div>
-"""
-
-st.markdown(quartile_card, unsafe_allow_html=True)
-
-def plot_to_base64(fig):
-    buf = BytesIO()
-    fig.savefig(buf, format="png", bbox_inches="tight", dpi=120)
-    buf.seek(0)
-    encoded = base64.b64encode(buf.read()).decode()
-    plt.close(fig)
-    return encoded
+# Function: convert matplotlib figure ➜ base64 (so it fits inside HTML card)
+def fig_to_base64(fig):
+    buffer = BytesIO()
+    fig.savefig(buffer, format="png", dpi=120, bbox_inches="tight")
+    buffer.seek(0)
+    img_bytes = buffer.read()
+    buffer.close()
+    return base64.b64encode(img_bytes).decode()
 
 # ============================
-# AGE & POSITION LEVEL DISTRIBUTION (SIDE BY SIDE)
+# HISTOGRAM CARDS (NO TITLE, WITH SPACING)
 # ============================
 
-colH1, colH2 = st.columns(2)
+st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
-# ============================
-# AGE HISTOGRAM
-# ============================
-with colH1:
-    fig, ax = plt.subplots(figsize=(5,3))
-    sns.histplot(df['Age'], kde=False, bins=15, color="#00bf63", ax=ax)
+col1, col2 = st.columns(2)
 
-    ax.set_title("Age Distribution", color="white")
+# ======== AGE DISTRIBUTION ========
+with col1:
+    fig, ax = plt.subplots(figsize=(5, 3))
+    sns.histplot(df["Age"], bins=12, color="#00bf63", ax=ax)
+
+    ax.set_title("")
     ax.set_xlabel("Age", color="white")
     ax.set_ylabel("Count", color="white")
-
-    # background style
-    ax.set_facecolor("#2e307d")
-    fig.patch.set_facecolor("#2e307d")
     ax.tick_params(colors="white")
+    fig.patch.set_facecolor("#2e307d")
+    ax.set_facecolor("#2e307d")
 
-    age_img = plot_to_base64(fig)
+    img_age = fig_to_base64(fig)
 
-    age_card = f"""
-    <div style="
-        width:100%;
-        border:3px solid #2e307d;
-        border-radius:12px;
-        padding:20px;
-        margin-top:15px;
-        background-color:#2e307d;
-        font-family:Inter, sans-serif;
-    ">
-        <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
-            Age Distribution
+    st.markdown(
+        f"""
+        <div style="
+            border:3px solid #2e307d;
+            border-radius:12px;
+            padding:20px;
+            margin-top:20px;
+            background-color:#2e307d;">
+            <img src="data:image/png;base64,{img_age}" style="width:100%; border-radius:10px;" />
         </div>
-        <img src="data:image/png;base64,{age_img}" style="width:100%; border-radius:10px;">
+        """,
+        unsafe_allow_html=True
+    )
+    plt.close(fig)
+
+# ======== POSITION LEVEL DISTRIBUTION ========
+with col2:
+    fig2, ax2 = plt.subplots(figsize=(5, 3))
+    sns.countplot(
+        data=df,
+        x="Current_Position_Level",
+        order=["Junior", "Mid", "Senior", "Lead"],
+        color="#00bf63",
+        ax=ax2,
+    )
+
+    ax2.set_title("")
+    ax2.set_xlabel("Position Level", color="white")
+    ax2.set_ylabel("Count", color="white")
+    ax2.tick_params(colors="white")
+    fig2.patch.set_facecolor("#2e307d")
+    ax2.set_facecolor("#2e307d")
+
+    img_pos = fig_to_base64(fig2)
+
+    st.markdown(
+        f"""
+        <div style="
+            border:3px solid #2e307d;
+            border-radius:12px;
+            padding:20px;
+            margin-top:20px;
+            background-color:#2e307d;">
+            <img src="data:image/png;base64,{img_pos}" style="width:100%; border-radius:10px;" />
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    plt.close(fig2)
+
+# ============================================
+# PERFORMANCE GROUP CARD (FIXED)
+# ============================================
+
+cluster_low = df[df["Cluster"] == 2].shape[0]
+cluster_high = df[df["Cluster"] == 4].shape[0]
+cluster_avg = df[df["Cluster"].isin([1, 3])].shape[0]
+
+cluster_rows = """
+<div style='display:flex; justify-content:space-between; padding:6px 0;
+            border-bottom:1px solid rgba(255,255,255,0.08); font-family:Inter, sans-serif;'>
+    <div style='font-size:22px; font-weight:600; color:white;'>Low Performing Talent</div>
+    <div style='font-size:22px; font-weight:700; color:#ff5757;'>""" + str(cluster_low) + """</div>
+</div>
+
+<div style='display:flex; justify-content:space-between; padding:6px 0;
+            border-bottom:1px solid rgba(255,255,255,0.08); font-family:Inter, sans-serif;'>
+    <div style='font-size:22px; font-weight:600; color:white;'>High Performing Talent</div>
+    <div style='font-size:22px; font-weight:700; color:#00bf63;'>""" + str(cluster_high) + """</div>
+</div>
+
+<div style='display:flex; justify-content:space-between; padding:6px 0;
+            border-bottom:1px solid rgba(255,255,255,0.08); font-family:Inter, sans-serif;'>
+    <div style='font-size:22px; font-weight:600; color:white;'>Average Talent</div>
+    <div style='font-size:22px; font-weight:500; color:#dddddd;'>""" + str(cluster_avg) + """</div>
+</div>
+"""
+
+cluster_card = """
+<div style='width:100%; border:3px solid #2e307d; border-radius:12px;
+            padding:20px; margin-top:15px; background-color:#2e307d;
+            font-family:Inter, sans-serif;'>
+    <div style='font-size:22px; font-weight:700; margin-bottom:12px; color:white;'>
+        Talent Count by Performance Group
     </div>
-    """
+    """ + cluster_rows + """
+</div>
+"""
 
-    st.markdown(age_card, unsafe_allow_html=True)
-
+st.markdown(cluster_card, unsafe_allow_html=True)
 
 # ============================
-# POSITION LEVEL DISTRIBUTION
+# POTENTIAL LOSS CARD
 # ============================
-with colH2:
-    fig, ax = plt.subplots(figsize=(5,3))
 
-    order = ["Junior", "Mid", "Senior", "Lead"]
-    sns.countplot(x=df["Current_Position_Level"], order=order, ax=ax, color="#00bf63")
+salary_col = "Salary"   # sesuaikan jika nama kolom beda
 
-    ax.set_title("Position Level Distribution", color="white")
-    ax.set_xlabel("Position Level", color="white")
-    ax.set_ylabel("Count", color="white")
+if salary_col not in df.columns:
+    st.markdown(
+        "<div style='width:100%; border:3px solid #2e307d; border-radius:12px;"
+        " padding:20px; margin-top:15px; background-color:#2e307d;"
+        " font-family:Inter, sans-serif;'>"
+        "<div style='font-size:22px; font-weight:700; margin-bottom:12px; color:white;'>"
+        "Potential Loss"
+        "</div>"
+        "<div style='font-size:16px; color:#dddddd;'>"
+        "Column <strong>Salary</strong> was not found in the dataset."
+        "</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+else:
+    # total salary untuk cluster low
+    s = pd.to_numeric(df.loc[df["Cluster"] == 2, salary_col], errors="coerce")
+    total_salary = s.sum(skipna=True)
 
-    # styling
-    ax.set_facecolor("#2e307d")
-    fig.patch.set_facecolor("#2e307d")
-    ax.tick_params(colors="white")
-    for label in ax.get_xticklabels():
-        label.set_color("white")
+    # format Rp tanpa spasi terpisah
+    try:
+        formatted_salary = "Rp " + "{:,.0f}".format(total_salary).replace(",", ".")
+    except:
+        formatted_salary = "Rp " + str(total_salary)
 
-    pos_img = plot_to_base64(fig)
+    html_card = (
+        "<div style='width:100%; border:3px solid #2e307d; border-radius:12px;"
+        " padding:20px; margin-top:15px; background-color:#2e307d;"
+        " font-family:Inter, sans-serif;'>"
 
-    pos_card = f"""
-    <div style="
-        width:100%;
-        border:3px solid #2e307d;
-        border-radius:12px;
-        padding:20px;
-        margin-top:15px;
-        background-color:#2e307d;
-        font-family:Inter, sans-serif;
-    ">
-        <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
-            Position Level Distribution
-        </div>
-        <img src="data:image/png;base64,{pos_img}" style="width:100%; border-radius:10px;">
-    </div>
-    """
+        "<div style='font-size:22px; font-weight:700; margin-bottom:12px; color:white;'>"
+        "Potential Loss"
+        "</div>"
 
-    st.markdown(pos_card, unsafe_allow_html=True)
+        "<div style='display:flex; justify-content:space-between; align-items:center; padding:8px 0;'>"
+        "<div style='font-size:16px; color:#dddddd;'>"
+        "Total monthly salary paid to low-performing talent"
+        "</div>"
+        f"<div style='font-size:28px; font-weight:700; color:#ff5757;'>{formatted_salary}</div>"
+        "</div>"
 
+        "<div style='font-size:13px; margin-top:10px; color:#cfcfcf;'>"
+        "This represents the estimated monthly salary load associated with low-performing talent — "
+        "a direct indicator of potential productivity loss from a business perspective."
+        "</div>"
 
+        "</div>"
+    )
 
+    st.markdown(html_card, unsafe_allow_html=True)
 
 # =========================
 # Top Talent
