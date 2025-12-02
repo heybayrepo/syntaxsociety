@@ -566,7 +566,7 @@ elif risk_category == 'Low Potential':
 # TALENT HIGHLIGHT SECTION
 # =============================================
 
-st.markdown("## 🔎 Talent Selector")
+st.markdown("## 🔎 Talent Predictor")
 
 # ======================================================
 # 1. DEFINISIKAN small_card DULU (HARUS DI ATAS)
