@@ -205,51 +205,134 @@ with tab1:
         </div>
     """, unsafe_allow_html=True)
 
-# ======================================================================
-# TAB 2 — Top Talent & High Risk Talent
-# ======================================================================
+# ===== TAB 2: Top Talent & High Risk Talent =====
 with tab2:
-    st.header("⭐ Top Talent")
+    st.header("Top Talent & High Risk Talent")
 
-    colA, colB = st.columns(2)
-    with colA:
-        cat_top = st.selectbox("Select ranking category:", ["Best Performing", "Best Leadership", "Best Potential"], key="top_tab2_cat")
-    with colB:
-        pos_options_top = ["All Levels"] + (sorted(df_ref["Current_Position_Level"].dropna().unique().tolist()) if "Current_Position_Level" in df_ref.columns else [])
-        level_top = st.selectbox("Filter by Position Level:", pos_options_top, key="top_tab2_level")
+    left, right = st.columns(2)
 
-    df_top = df_ref.copy() if level_top == "All Levels" else df_ref[df_ref["Current_Position_Level"] == level_top]
+    # ====================================================
+    # ===================== TOP TALENT ====================
+    # ====================================================
+    with left:
+        st.markdown("## ⭐ Top 10 Talent")
 
-    if cat_top == "Best Performing":
-        ranked_top = df_top.sort_values("Performance_Index", ascending=False).head(10)
-    elif cat_top == "Best Leadership":
-        ranked_top = df_top.sort_values("Leadership_Index", ascending=False).head(10)
-    else:
-        ranked_top = df_top.sort_values("Potential_Index", ascending=False).head(10)
+        # --------------------
+        # Filter TOP TALENT
+        # --------------------
+        top_category = st.selectbox(
+            "Ranking category (Top):",
+            ['Best Performing', 'Best Leadership', 'Best Potential'],
+            key="tab2_top_category"
+        )
 
-    st.dataframe(ranked_top, use_container_width=True, hide_index=True)
+        pos_vals_top = ['All Levels']
+        if "Current_Position_Level" in df_ref.columns:
+            pos_vals_top += sorted(df_ref['Current_Position_Level'].dropna().unique().tolist())
 
-    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+        top_level = st.selectbox(
+            "Position level (Top):",
+            pos_vals_top,
+            key="tab2_top_level"
+        )
 
-    st.header("⚠️ High Risk Talent")
+        # Filter dataset
+        df_top = df_ref.copy()
+        if top_level != "All Levels":
+            df_top = df_top[df_top["Current_Position_Level"] == top_level]
 
-    colR1, colR2 = st.columns(2)
-    with colR1:
-        risk_cat = st.selectbox("Select category:", ["Low Performing", "Low Leadership", "Low Potential"], key="risk_tab2_cat")
-    with colR2:
-        pos_options_risk = ["All Levels"] + (sorted(df_ref["Current_Position_Level"].dropna().unique().tolist()) if "Current_Position_Level" in df_ref.columns else [])
-        risk_level = st.selectbox("Filter by Position Level:", pos_options_risk, key="risk_tab2_level")
+        # Column + sort logic
+        if top_category == "Best Performing":
+            sort_key_top = "Performance_Score"
+            cols_show_top = ["Employee_ID", "Age", "Current_Position_Level",
+                             "Performance_Score", "Performance_Index", "Cluster"]
 
-    df_risk = df_ref.copy() if risk_level == "All Levels" else df_ref[df_ref["Current_Position_Level"] == risk_level]
+        elif top_category == "Best Leadership":
+            sort_key_top = "Leadership_Score"
+            cols_show_top = ["Employee_ID", "Age", "Current_Position_Level",
+                             "Leadership_Score", "Leadership_Index", "Cluster"]
 
-    if risk_cat == "Low Performing":
-        ranked_risk = df_risk.sort_values("Performance_Index", ascending=True).head(10)
-    elif risk_cat == "Low Leadership":
-        ranked_risk = df_risk.sort_values("Leadership_Index", ascending=True).head(10)
-    else:
-        ranked_risk = df_risk.sort_values("Potential_Index", ascending=True).head(10)
+        else:  # Best Potential
+            sort_key_top = "Peer_Review_Score"
+            cols_show_top = ["Employee_ID", "Age", "Current_Position_Level",
+                             "Peer_Review_Score", "Training_Hours", "Cluster"]
 
-    st.dataframe(ranked_risk, use_container_width=True, hide_index=True)
+        df_top[sort_key_top] = pd.to_numeric(df_top.get(sort_key_top, 0), errors="coerce").fillna(0)
+
+        # TOP 10
+        top10 = df_top.sort_values(sort_key_top, ascending=False).head(10).copy()
+
+        for c in cols_show_top:
+            if c not in top10.columns:
+                top10[c] = "—"
+
+        st.dataframe(
+            top10[cols_show_top],
+            use_container_width=True,
+            hide_index=True
+        )
+
+
+    # ====================================================
+    # ================== HIGH RISK TALENT =================
+    # ====================================================
+    with right:
+        st.markdown("## ⚠️ Bottom 10 High-Risk Talent")
+
+        # --------------------
+        # Filter HIGH RISK
+        # --------------------
+        risk_category = st.selectbox(
+            "Ranking category (High Risk):",
+            ['Low Performing', 'Low Leadership', 'Low Potential'],
+            key="tab2_risk_category"
+        )
+
+        pos_vals_risk = ['All Levels']
+        if "Current_Position_Level" in df_ref.columns:
+            pos_vals_risk += sorted(df_ref['Current_Position_Level'].dropna().unique().tolist())
+
+        risk_level = st.selectbox(
+            "Position level (High Risk):",
+            pos_vals_risk,
+            key="tab2_risk_level"
+        )
+
+        # Filter dataset
+        df_risk = df_ref.copy()
+        if risk_level != "All Levels":
+            df_risk = df_risk[df_risk["Current_Position_Level"] == risk_level]
+
+        # Column + sort logic (mirroring top)
+        if risk_category == "Low Performing":
+            sort_key_risk = "Performance_Score"
+            cols_show_risk = ["Employee_ID", "Age", "Current_Position_Level",
+                              "Performance_Score", "Performance_Index", "Cluster"]
+
+        elif risk_category == "Low Leadership":
+            sort_key_risk = "Leadership_Score"
+            cols_show_risk = ["Employee_ID", "Age", "Current_Position_Level",
+                              "Leadership_Score", "Leadership_Index", "Cluster"]
+
+        else:  
+            sort_key_risk = "Peer_Review_Score"
+            cols_show_risk = ["Employee_ID", "Age", "Current_Position_Level",
+                              "Peer_Review_Score", "Training_Hours", "Cluster"]
+
+        df_risk[sort_key_risk] = pd.to_numeric(df_risk.get(sort_key_risk, 0), errors="coerce").fillna(0)
+
+        # BOTTOM 10
+        low10 = df_risk.sort_values(sort_key_risk, ascending=True).head(10).copy()
+
+        for c in cols_show_risk:
+            if c not in low10.columns:
+                low10[c] = "—"
+
+        st.dataframe(
+            low10[cols_show_risk],
+            use_container_width=True,
+            hide_index=True
+        )
 
 # ======================================================================
 # TAB 3 — Talent Predictor (stable, session-safe CSV upload)
