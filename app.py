@@ -563,16 +563,28 @@ elif risk_category == 'Low Potential':
     )
 
 # =======================================================================
-# 🔮 TALENT PREDICTOR — FINAL STABLE VERSION (FIXED i1 ERROR)
+# 🔮 TALENT PREDICTOR — FINAL STABLE VERSION (SESSION-SAFE CSV UPLOAD)
 # =======================================================================
-
 import streamlit as st
 import pandas as pd
+
+# -----------------------------------------------------------------------
+# ASSUME: there is an initial `df` loaded earlier in the app.
+# If not present, uncomment the following line and set the path:
+# df = pd.read_csv("data/Clean/dataset_clustered_dashboard.csv")
+# -----------------------------------------------------------------------
+
+# ensure a session-stored master dataframe so uploads persist during session
+if "master_df" not in st.session_state:
+    # prefer an existing df in global scope, otherwise create empty frame
+    st.session_state["master_df"] = globals().get("df", pd.DataFrame())
+
+df_ref = st.session_state["master_df"]  # working df reference
 
 # -------------------------------
 # Small Card Component (stable)
 # -------------------------------
-def small_card(title, value, color="white", bg="#2e307d"):
+def small_card(title, value, color="white", bg="#2e307d", height_px=120):
     return f"""
     <div style="
         border:3px solid #2e307d;
@@ -581,7 +593,7 @@ def small_card(title, value, color="white", bg="#2e307d"):
         margin-bottom:15px;
         background-color:{bg};
         font-family:Inter, sans-serif;
-        height:120px;
+        height:{height_px}px;
         display:flex;
         flex-direction:column;
         justify-content:space-between;
@@ -617,105 +629,124 @@ def long_card(title, content):
     </div>
     """
 
-# =======================================================================
-# TALENT PREDICTOR
-# =======================================================================
-
+# ----------------------------------------------------------------------
+# Start Talent Predictor UI
+# ----------------------------------------------------------------------
 st.markdown("## 🔎 Talent Predictor")
 st.markdown("### Select Talent Input Method")
 
-# Mapping cluster info
-cluster_map = (
-    df[["Cluster", "Characteristics", "Description", "HR_Recommendations", "HR_Programs"]]
-      .drop_duplicates("Cluster")
-      .set_index("Cluster")
-      .to_dict("index")
-)
+# build a cluster_map from the current df_ref if possible
+if {"Cluster","Characteristics","Description","HR_Recommendations","HR_Programs"}.issubset(df_ref.columns):
+    cluster_map = (
+        df_ref[["Cluster","Characteristics","Description","HR_Recommendations","HR_Programs"]]
+        .drop_duplicates("Cluster")
+        .set_index("Cluster")
+        .to_dict("index")
+    )
+else:
+    cluster_map = {}
 
 mode = st.radio(
     "",
-    ["Select employee ID", "Predict employee cluster and characteristics", "Upload employee data in bulk using CSV"],
+    [
+        "Select employee ID",
+        "Predict employee cluster and characteristics",
+        "Upload employee data in bulk using CSV"
+    ],
     horizontal=True
 )
 
 emp = None
 is_empty = False
 
-# ==================================================================
-# 1️⃣ SELECT EMPLOYEE ID
-# ==================================================================
+# -----------------------------
+# 1) SELECT EMPLOYEE ID
+# -----------------------------
 if mode == "Select employee ID":
-
     st.markdown("#### Select Current Employee")
-    colA, colB = st.columns(2)
 
+    colA, colB = st.columns(2)
     with colA:
-        emp_dropdown = st.selectbox(
-            "Select Employee ID:",
-            ["None"] + list(df["Employee_ID"].unique()),
-            key="tp_dropdown"
-        )
+        # prepare dropdown values from session master df
+        ids = list(df_ref["Employee_ID"].dropna().astype(str).unique()) if not df_ref.empty else []
+        dropdown_vals = ["None"] + ids
+        emp_dropdown = st.selectbox("Select Employee ID:", dropdown_vals, key="tp_dropdown")
 
     with colB:
-        typed_id = st.text_input(
-            "Or type Employee ID:",
-            placeholder="e.g. EMP0057",
-            key="tp_typed_entry"
-        )
+        typed_id = st.text_input("Or type Employee ID:", placeholder="e.g. EMP0057", key="tp_typed_entry")
 
-    # If manual typed → override dropdown
-    if typed_id.strip() in df["Employee_ID"].values:
+    # typed id takes precedence if it matches a known ID
+    if typed_id.strip() and typed_id.strip() in df_ref.get("Employee_ID", pd.Series(dtype=str)).astype(str).values:
         emp_id = typed_id.strip()
-        st.session_state.tp_dropdown = "None"
+        # visually set dropdown to None to avoid confusion
+        try:
+            st.session_state["tp_dropdown"] = "None"
+        except Exception:
+            pass
     else:
         emp_id = emp_dropdown
 
-    # If "None" keep empty state
-    if emp_id == "None":
+    if emp_id == "None" or emp_id is None:
         is_empty = True
         emp = {}
     else:
-        emp = df[df["Employee_ID"] == emp_id].iloc[0].to_dict()
+        # safe extraction
+        row = df_ref[df_ref["Employee_ID"].astype(str) == str(emp_id)]
+        if len(row) == 0:
+            is_empty = True
+            emp = {}
+        else:
+            emp = row.iloc[0].to_dict()
 
-# ==================================================================
-# 2️⃣ ADD NEW EMPLOYEE MANUALLY
-# ==================================================================
+# -----------------------------
+# 2) PREDICT EMPLOYEE (MANUAL FORM)
+# -----------------------------
 elif mode == "Predict employee cluster and characteristics":
-
     st.markdown("### Predict Employee Cluster and Characteristics")
 
-    # Render form dulu — selalu tampil, tidak hilang
+    # Employee ID optional field
+    emp_id_input = st.text_input("Employee ID (optional):", placeholder="e.g. NEW001", key="m_empid")
+
+    # form fields (defaults are None — will show empty UI)
     age   = st.number_input("Age", min_value=18, max_value=70, value=None, key="m_age")
-    perf  = st.selectbox("Performance Score (1–5)", [1,2,3,4,5], index=None, key="m_perf")
+    perf  = st.selectbox("Performance Score (1–5)", ["Choose an option", 1,2,3,4,5], index=0, key="m_perf")
     lead  = st.number_input("Leadership Score", min_value=0.0, max_value=100.0, value=None, key="m_lead")
     train = st.number_input("Training Hours", min_value=0.0, max_value=500.0, value=None, key="m_train")
     proj  = st.number_input("Projects Handled", min_value=0.0, max_value=100.0, value=None, key="m_proj")
     peer  = st.number_input("Peer Review Score", min_value=0.0, max_value=100.0, value=None, key="m_peer")
-    level = st.selectbox("Current Position Level", ["Junior","Mid","Senior","Lead"], index=None, key="m_level")
+    level = st.selectbox("Current Position Level", ["Choose an option","Junior","Mid","Senior","Lead"], index=0, key="m_level")
 
-    # Default state → card kosong seperti gambarmu
-    emp = {}
-    is_empty = True
+    # empty/placeholder view until all required fields (except optional emp id) are provided
+    required_filled = (
+        (age is not None) and
+        (perf != "Choose an option") and
+        (lead is not None) and
+        (train is not None) and
+        (proj is not None) and
+        (peer is not None) and
+        (level != "Choose an option")
+    )
 
-    # Jika SEMUA terisi → baru kita jalankan prediksi
-    if all(v is not None for v in [age, perf, lead, train, proj, peer, level]):
+    if not required_filled:
+        is_empty = True
+        emp = {}
+    else:
         is_empty = False
         emp = {
-            "Employee_ID": "—",
+            "Employee_ID": emp_id_input.strip() if emp_id_input.strip() else "—",
             "Age": age,
-            "Performance_Score": perf,
-            "Leadership_Score": lead,
-            "Training_Hours": train,
-            "Projects_Handled": proj,
-            "Peer_Review_Score": peer,
+            "Performance_Score": int(perf),
+            "Leadership_Score": float(lead),
+            "Training_Hours": float(train),
+            "Projects_Handled": float(proj),
+            "Peer_Review_Score": float(peer),
             "Current_Position_Level": level,
         }
 
-# ==================================================================
-# 3️⃣ UPLOAD CSV MODE
-# ==================================================================
+# -----------------------------
+# 3) UPLOAD CSV
+# -----------------------------
 elif mode == "Upload employee data in bulk using CSV":
-
     st.markdown("*Upload a CSV following the required format.*")
 
     template_df = pd.DataFrame({
@@ -730,21 +761,31 @@ elif mode == "Upload employee data in bulk using CSV":
     })
 
     st.download_button("Download template CSV", template_df.to_csv(index=False), "employee_template.csv")
-
     uploaded = st.file_uploader("Upload CSV:", type=["csv"])
 
     if uploaded:
-        new = pd.read_csv(uploaded)
-        df = pd.concat([df, new], ignore_index=True)
-        st.success("Data uploaded successfully! Now search them in Select Employee ID mode.")
+        try:
+            new = pd.read_csv(uploaded)
+            # basic validation: required columns presence
+            required_cols = {"Employee_ID","Age","Performance_Score","Leadership_Score",
+                             "Training_Hours","Projects_Handled","Peer_Review_Score","Current_Position_Level"}
+            if not required_cols.issubset(set(new.columns)):
+                st.error("Uploaded CSV missing required columns. Use the template.")
+            else:
+                # append to session master df
+                st.session_state["master_df"] = pd.concat([st.session_state["master_df"], new], ignore_index=True)
+                df_ref = st.session_state["master_df"]
+                st.success(f"Uploaded {len(new)} rows. You can now search them in 'Select employee ID'.")
+        except Exception as e:
+            st.error(f"Failed to read uploaded CSV: {e}")
 
+    # in upload mode we stop here (no overview/cards)
     st.stop()
 
-# ==================================================================
-# EMPTY VIEW (FIXED)
-# ==================================================================
+# -----------------------------
+# EMPTY VIEW (placeholder)
+# -----------------------------
 if is_empty:
-
     st.markdown("### Overview")
     o1,o2,o3 = st.columns(3)
     o1.markdown(small_card("Employee ID", "—"), unsafe_allow_html=True)
@@ -758,7 +799,7 @@ if is_empty:
     ki3.markdown(small_card("Potential Index", "—"), unsafe_allow_html=True)
 
     st.markdown("### Character")
-    cc1,cc2 = st.columns(2)
+    cc1,cc2 = st.columns([0.25,0.75])
     cc1.markdown(small_card("Cluster", "—"), unsafe_allow_html=True)
     cc2.markdown(small_card("Characteristics", "—"), unsafe_allow_html=True)
 
@@ -767,92 +808,65 @@ if is_empty:
     st.markdown(long_card("Recommended Development Program", "—"), unsafe_allow_html=True)
     st.stop()
 
-
-# ==================================================================
-# FEATURE ENGINEERING (FIXED — SAFE FOR NONE VALUES)
-# ==================================================================
-
+# -----------------------------
+# FEATURE ENGINEERING (safe numeric conversion)
+# -----------------------------
 def safe_float(x):
     try:
         return float(x)
     except:
         return 0.0
 
-# Pastikan semua key numeric selalu ada
-for key in ["Leadership_Score","Peer_Review_Score","Performance_Score",
-            "Projects_Handled","Training_Hours"]:
+# ensure numeric keys exist on emp dict
+for key in ["Leadership_Score","Peer_Review_Score","Performance_Score","Projects_Handled","Training_Hours"]:
     emp[key] = safe_float(emp.get(key, 0))
 
-# Hitung Index dengan aman
 emp["Leadership_Index"] = 0.4*emp["Leadership_Score"] + 0.6*emp["Peer_Review_Score"]
-emp["Performance_Index"] = (
-    0.5*emp["Performance_Score"] +
-    0.2*emp["Projects_Handled"] +
-    0.3*emp["Peer_Review_Score"]
-)
-emp["Potential_Index"] = (
-    0.4*emp["Training_Hours"] +
-    0.4*emp["Peer_Review_Score"] +
-    0.2*emp["Leadership_Score"]
-)
+emp["Performance_Index"] = 0.5*emp["Performance_Score"] + 0.2*emp["Projects_Handled"] + 0.3*emp["Peer_Review_Score"]
+emp["Potential_Index"] = 0.4*emp["Training_Hours"] + 0.4*emp["Peer_Review_Score"] + 0.2*emp["Leadership_Score"]
 
-# ==================================================================
-# CLUSTERING (FIXED — NO MORE NONE ERROR)
-# ==================================================================
-
-# Cek apakah dataframe memiliki index untuk cluster
-if {"Performance_Index","Leadership_Index","Potential_Index","Cluster"}.issubset(df.columns):
-
-    centroids = df.groupby("Cluster")[["Performance_Index","Leadership_Index","Potential_Index"]].mean()
-
-    # Hitung jarak aman
+# -----------------------------
+# CLUSTERING (guarded)
+# -----------------------------
+if {"Performance_Index","Leadership_Index","Potential_Index","Cluster"}.issubset(df_ref.columns):
+    centroids = df_ref.groupby("Cluster")[["Performance_Index","Leadership_Index","Potential_Index"]].mean()
     try:
         dist = ((centroids - [
             emp["Performance_Index"],
             emp["Leadership_Index"],
             emp["Potential_Index"]
         ])**2).sum(axis=1)
-
         emp["Cluster"] = int(dist.idxmin())
-
-    except:
+    except Exception:
         emp["Cluster"] = None
-
 else:
     emp["Cluster"] = None
 
-# Jika cluster tidak ditemukan → berikan placeholder "-"
+# lookup info safely
 if emp["Cluster"] is None:
     info = {"Characteristics":"—","Description":"—","HR_Recommendations":"—","HR_Programs":"—"}
 else:
-    info = cluster_map.get(emp["Cluster"], {
-        "Characteristics":"—",
-        "Description":"—",
-        "HR_Recommendations":"—",
-        "HR_Programs":"—"
-    })
+    info = cluster_map.get(emp["Cluster"], {"Characteristics":"—","Description":"—","HR_Recommendations":"—","HR_Programs":"—"})
 
-# ==================================================================
-# OVERVIEW
-# ==================================================================
+# -----------------------------
+# OVERVIEW (Employee ID, Age, Position Level)
+# -----------------------------
 st.markdown("### Overview")
-
 oo1,oo2,oo3 = st.columns(3)
 oo1.markdown(small_card("Employee ID", emp.get("Employee_ID","—")), unsafe_allow_html=True)
-oo2.markdown(small_card("Age", emp["Age"]), unsafe_allow_html=True)
-oo3.markdown(small_card("Position Level", emp["Current_Position_Level"]), unsafe_allow_html=True)
+oo2.markdown(small_card("Age", emp.get("Age","—")), unsafe_allow_html=True)
+oo3.markdown(small_card("Position Level", emp.get("Current_Position_Level","—")), unsafe_allow_html=True)
 
-# ==================================================================
-# INDEXES
-# ==================================================================
+# -----------------------------
+# KEY TALENT INDEXES (3 columns)
+# -----------------------------
 st.markdown("### Key Talent Indexes")
-
-avg_perf = df["Performance_Index"].mean()
-avg_lead = df["Leadership_Index"].mean()
-avg_pot  = df["Potential_Index"].mean()
+# compute averages from df_ref if available otherwise 0
+avg_perf = df_ref["Performance_Index"].mean() if "Performance_Index" in df_ref.columns and not df_ref.empty else 0.0
+avg_lead = df_ref["Leadership_Index"].mean() if "Leadership_Index" in df_ref.columns and not df_ref.empty else 0.0
+avg_pot  = df_ref["Potential_Index"].mean() if "Potential_Index" in df_ref.columns and not df_ref.empty else 0.0
 
 c1,c2,c3 = st.columns(3)
-
 c1.markdown(
     small_card(
         "Performance Index",
@@ -861,7 +875,6 @@ c1.markdown(
     ),
     unsafe_allow_html=True
 )
-
 c2.markdown(
     small_card(
         "Leadership Index",
@@ -870,7 +883,6 @@ c2.markdown(
     ),
     unsafe_allow_html=True
 )
-
 c3.markdown(
     small_card(
         "Potential Index",
@@ -880,26 +892,20 @@ c3.markdown(
     unsafe_allow_html=True
 )
 
-# ==================================================================
-# CHARACTER & HR INSIGHTS
-# ==================================================================
+# -----------------------------
+# CHARACTER & HR INSIGHTS (proportional)
+# -----------------------------
 st.markdown("### Character")
+cc1,cc2 = st.columns([0.28,0.72])  # cluster smaller, characteristics wider
+cc1.markdown(small_card("Cluster", emp.get("Cluster","—")), unsafe_allow_html=True)
+cc2.markdown(small_card("Characteristics", info.get("Characteristics","—")), unsafe_allow_html=True)
 
-# Atur proporsi: cluster kecil (0.25), characteristics besar (0.75)
-cc1, cc2 = st.columns([0.25, 0.75])
+st.markdown(build_description_card(info.get("Description","—")), unsafe_allow_html=True)
+st.markdown(long_card("HR Recommendations", info.get("HR_Recommendations","—")), unsafe_allow_html=True)
+st.markdown(long_card("Recommended Development Program", info.get("HR_Programs","—")), unsafe_allow_html=True)
 
-# Card Cluster — kecil tapi tetap elegan
-cc1.markdown(
-    small_card("Cluster", emp["Cluster"]),
-    unsafe_allow_html=True
-)
-
-# Card Characteristics — lebar penuh, tidak menyisakan ruang kosong
-cc2.markdown(
-    small_card("Characteristics", info["Characteristics"]),
-    unsafe_allow_html=True
-)
-
-st.markdown(build_description_card(info["Description"]), unsafe_allow_html=True)
-st.markdown(long_card("HR Recommendations", info["HR_Recommendations"]), unsafe_allow_html=True)
-st.markdown(long_card("Recommended Development Program", info["HR_Programs"]), unsafe_allow_html=True)
+# ----------------------------------------------------------------------
+# Save back to globals for compatibility with rest of app (optional)
+# ----------------------------------------------------------------------
+# update global df variable so other parts of your app that reference `df` keep working
+globals()["df"] = st.session_state["master_df"]
