@@ -562,37 +562,34 @@ elif risk_category == 'Low Potential':
         use_container_width=True
     )
 
-# =============================================
-# 🔮 TALENT PREDICTOR (FINAL FIXED VERSION)
-# =============================================
+# =======================================================================
+# 🔮 TALENT PREDICTOR — FINAL STABLE VERSION (FIXED i1 ERROR)
+# =======================================================================
 
-st.markdown("## 🔎 Talent Predictor")
-st.markdown("### Select Talent Input Method")
+import streamlit as st
+import pandas as pd
 
-mode = st.radio(
-    "",
-    ["Select employee ID", "Add new employee manually", "Upload employee data in bulk using CSV"],
-    horizontal=True
-)
-
-# =============================================
-# CARD COMPONENTS — WAJIB ADA DI ATAS
-# =============================================
-
-def small_card(title, value, color="white"):
+# -------------------------------
+# Small Card Component (stable)
+# -------------------------------
+def small_card(title, value, color="white", bg="#2e307d"):
     return f"""
     <div style="
         border:3px solid #2e307d;
         border-radius:12px;
         padding:16px;
         margin-bottom:15px;
-        background-color:#2e307d;
+        background-color:{bg};
         font-family:Inter, sans-serif;
+        height:120px;
+        display:flex;
+        flex-direction:column;
+        justify-content:space-between;
     ">
         <h3 style="margin:0; padding:0; color:white; font-size:20px;">
             {title}
         </h3>
-        <div style="margin-top:10px;">
+        <div style="margin-top:6px; display:flex; align-items:center;">
             <span style="font-size:22px; font-weight:400; color:{color};">
                 {value}
             </span>
@@ -602,17 +599,11 @@ def small_card(title, value, color="white"):
 
 def build_description_card(text):
     return f"""
-    <div style="
-        width:100%; border:3px solid #2e307d; border-radius:12px;
-        padding:20px; margin-top:20px; background-color:#2e307d;
-        font-family:Inter, sans-serif;
-    ">
-        <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
-            Description
-        </div>
-        <div style="font-size:18px; line-height:1.5; color:#dddddd;">
-            {text}
-        </div>
+    <div style='width:100%; border:3px solid #2e307d; border-radius:12px;
+                padding:20px; margin-top:20px; background-color:#2e307d;
+                font-family:Inter, sans-serif;'>
+        <div style='font-size:22px; font-weight:700; margin-bottom:12px; color:white;'>Description</div>
+        <div style='font-size:18px; line-height:1.5; color:#dddddd;'>{text}</div>
     </div>
     """
 
@@ -626,30 +617,42 @@ def long_card(title, content):
     </div>
     """
 
-# =============================================
-# PREPARE HR CLUSTER MAPPING
-# =============================================
+# =======================================================================
+# TALENT PREDICTOR
+# =======================================================================
 
+st.markdown("## 🔎 Talent Predictor")
+st.markdown("### Select Talent Input Method")
+
+# Mapping cluster info
 cluster_map = (
-    df[["Cluster","Characteristics","Description","HR_Recommendations","HR_Programs"]]
-    .drop_duplicates("Cluster")
-    .set_index("Cluster")
-    .to_dict("index")
+    df[["Cluster", "Characteristics", "Description", "HR_Recommendations", "HR_Programs"]]
+      .drop_duplicates("Cluster")
+      .set_index("Cluster")
+      .to_dict("index")
 )
 
-# ========================================================
-# 1) MODE: SELECT EMPLOYEE ID
-# ========================================================
+mode = st.radio(
+    "",
+    ["Select employee ID", "Predict employee cluster and characteristics", "Upload employee data in bulk using CSV"],
+    horizontal=True
+)
 
+emp = None
+is_empty = False
+
+# ==================================================================
+# 1️⃣ SELECT EMPLOYEE ID
+# ==================================================================
 if mode == "Select employee ID":
-    st.markdown("#### Select Current Employee")
 
-    colA, colB = st.columns([1,1])
+    st.markdown("#### Select Current Employee")
+    colA, colB = st.columns(2)
 
     with colA:
         emp_dropdown = st.selectbox(
             "Select Employee ID:",
-            df["Employee_ID"].unique(),
+            ["None"] + list(df["Employee_ID"].unique()),
             key="tp_dropdown"
         )
 
@@ -657,49 +660,63 @@ if mode == "Select employee ID":
         typed_id = st.text_input(
             "Or type Employee ID:",
             placeholder="e.g. EMP0057",
-            key="tp_typed"
+            key="tp_typed_entry"
         )
 
-    # Prioritize typed ID if valid
+    # If manual typed → override dropdown
     if typed_id.strip() in df["Employee_ID"].values:
-        emp_row = df[df["Employee_ID"] == typed_id.strip()].iloc[0]
+        emp_id = typed_id.strip()
+        st.session_state.tp_dropdown = "None"
     else:
-        emp_row = df[df["Employee_ID"] == emp_dropdown].iloc[0]
+        emp_id = emp_dropdown
 
-    emp = emp_row.to_dict()
+    # If "None" keep empty state
+    if emp_id == "None":
+        is_empty = True
+        emp = {}
+    else:
+        emp = df[df["Employee_ID"] == emp_id].iloc[0].to_dict()
 
+# ==================================================================
+# 2️⃣ ADD NEW EMPLOYEE MANUALLY
+# ==================================================================
+elif mode == "Predict employee cluster and characteristics":
 
-# ========================================================
-# 2) MODE: ADD NEW EMPLOYEE MANUALLY
-# ========================================================
+    st.markdown("### Predict Employee Cluster and Characteristics")
 
-elif mode == "Add new employee manually":
-    st.markdown("### Add New Employee Manually")
+    # Render form dulu — selalu tampil, tidak hilang
+    age   = st.number_input("Age", min_value=18, max_value=70, value=None, key="m_age")
+    perf  = st.selectbox("Performance Score (1–5)", [1,2,3,4,5], index=None, key="m_perf")
+    lead  = st.number_input("Leadership Score", min_value=0.0, max_value=100.0, value=None, key="m_lead")
+    train = st.number_input("Training Hours", min_value=0.0, max_value=500.0, value=None, key="m_train")
+    proj  = st.number_input("Projects Handled", min_value=0.0, max_value=100.0, value=None, key="m_proj")
+    peer  = st.number_input("Peer Review Score", min_value=0.0, max_value=100.0, value=None, key="m_peer")
+    level = st.selectbox("Current Position Level", ["Junior","Mid","Senior","Lead"], index=None, key="m_level")
 
-    age   = st.number_input("Age", min_value=18, max_value=70, value=25)
-    perf  = st.selectbox("Performance Score (1–5)", [1,2,3,4,5])
-    lead  = st.number_input("Leadership Score", 0.0, 100.0, value=50.0)
-    train = st.number_input("Training Hours", 0.0, 500.0, value=0.0)
-    proj  = st.number_input("Projects Handled", 0.0, 100.0, value=0.0)
-    peer  = st.number_input("Peer Review Score", 0.0, 100.0, value=50.0)
-    level = st.selectbox("Current Position Level", ["Junior","Mid","Senior","Lead"])
+    # Default state → card kosong seperti gambarmu
+    emp = {}
+    is_empty = True
 
-    emp = {
-        "Age": age,
-        "Performance_Score": perf,
-        "Leadership_Score": lead,
-        "Training_Hours": train,
-        "Projects_Handled": proj,
-        "Peer_Review_Score": peer,
-        "Current_Position_Level": level
-    }
+    # Jika SEMUA terisi → baru kita jalankan prediksi
+    if all(v is not None for v in [age, perf, lead, train, proj, peer, level]):
+        is_empty = False
+        emp = {
+            "Employee_ID": "—",
+            "Age": age,
+            "Performance_Score": perf,
+            "Leadership_Score": lead,
+            "Training_Hours": train,
+            "Projects_Handled": proj,
+            "Peer_Review_Score": peer,
+            "Current_Position_Level": level,
+        }
 
-# ========================================================
-# 3) MODE: UPLOAD CSV
-# ========================================================
-
+# ==================================================================
+# 3️⃣ UPLOAD CSV MODE
+# ==================================================================
 elif mode == "Upload employee data in bulk using CSV":
-    st.markdown("*Upload a CSV following the required employee format.*")
+
+    st.markdown("*Upload a CSV following the required format.*")
 
     template_df = pd.DataFrame({
         "Employee_ID":["EMP0001"],
@@ -711,83 +728,177 @@ elif mode == "Upload employee data in bulk using CSV":
         "Peer_Review_Score":[75],
         "Current_Position_Level":["Senior"]
     })
-    st.download_button("Download template CSV", template_df.to_csv(index=False), "template.csv")
 
-    uploaded_file = st.file_uploader("Upload CSV:", type=["csv"])
-    if uploaded_file is None:
-        st.stop()
+    st.download_button("Download template CSV", template_df.to_csv(index=False), "employee_template.csv")
 
-    uploaded_df = pd.read_csv(uploaded_file)
-    emp = uploaded_df.iloc[0].to_dict()
+    uploaded = st.file_uploader("Upload CSV:", type=["csv"])
 
-# =============================================
-# FEATURE ENGINEERING
-# =============================================
+    if uploaded:
+        new = pd.read_csv(uploaded)
+        df = pd.concat([df, new], ignore_index=True)
+        st.success("Data uploaded successfully! Now search them in Select Employee ID mode.")
 
-for key in ["Leadership_Score","Peer_Review_Score","Performance_Score","Projects_Handled","Training_Hours"]:
-    if key not in emp:
-        emp[key] = 0
+    st.stop()
 
+# ==================================================================
+# EMPTY VIEW (FIXED)
+# ==================================================================
+if is_empty:
+
+    st.markdown("### Overview")
+    o1,o2,o3 = st.columns(3)
+    o1.markdown(small_card("Employee ID", "—"), unsafe_allow_html=True)
+    o2.markdown(small_card("Age", "—"), unsafe_allow_html=True)
+    o3.markdown(small_card("Position Level", "—"), unsafe_allow_html=True)
+
+    st.markdown("### Key Talent Indexes")
+    ki1,ki2,ki3 = st.columns(3)
+    ki1.markdown(small_card("Performance Index", "—"), unsafe_allow_html=True)
+    ki2.markdown(small_card("Leadership Index", "—"), unsafe_allow_html=True)
+    ki3.markdown(small_card("Potential Index", "—"), unsafe_allow_html=True)
+
+    st.markdown("### Character")
+    cc1,cc2 = st.columns(2)
+    cc1.markdown(small_card("Cluster", "—"), unsafe_allow_html=True)
+    cc2.markdown(small_card("Characteristics", "—"), unsafe_allow_html=True)
+
+    st.markdown(build_description_card("—"), unsafe_allow_html=True)
+    st.markdown(long_card("HR Recommendations", "—"), unsafe_allow_html=True)
+    st.markdown(long_card("Recommended Development Program", "—"), unsafe_allow_html=True)
+    st.stop()
+
+
+# ==================================================================
+# FEATURE ENGINEERING (FIXED — SAFE FOR NONE VALUES)
+# ==================================================================
+
+def safe_float(x):
+    try:
+        return float(x)
+    except:
+        return 0.0
+
+# Pastikan semua key numeric selalu ada
+for key in ["Leadership_Score","Peer_Review_Score","Performance_Score",
+            "Projects_Handled","Training_Hours"]:
+    emp[key] = safe_float(emp.get(key, 0))
+
+# Hitung Index dengan aman
 emp["Leadership_Index"] = 0.4*emp["Leadership_Score"] + 0.6*emp["Peer_Review_Score"]
-emp["Performance_Index"] = 0.5*emp["Performance_Score"] + 0.2*emp["Projects_Handled"] + 0.3*emp["Peer_Review_Score"]
-emp["Potential_Index"] = 0.4*emp["Training_Hours"] + 0.4*emp["Peer_Review_Score"] + 0.2*emp["Leadership_Score"]
+emp["Performance_Index"] = (
+    0.5*emp["Performance_Score"] +
+    0.2*emp["Projects_Handled"] +
+    0.3*emp["Peer_Review_Score"]
+)
+emp["Potential_Index"] = (
+    0.4*emp["Training_Hours"] +
+    0.4*emp["Peer_Review_Score"] +
+    0.2*emp["Leadership_Score"]
+)
 
-# =============================================
-# CLUSTER PREDICTION (NEAREST CENTROID)
-# =============================================
+# ==================================================================
+# CLUSTERING (FIXED — NO MORE NONE ERROR)
+# ==================================================================
 
-centroids = df.groupby("Cluster")[["Performance_Index","Leadership_Index","Potential_Index"]].mean()
-dist = ((centroids - [
-    emp["Performance_Index"],
-    emp["Leadership_Index"],
-    emp["Potential_Index"]
-])**2).sum(axis=1)
+# Cek apakah dataframe memiliki index untuk cluster
+if {"Performance_Index","Leadership_Index","Potential_Index","Cluster"}.issubset(df.columns):
 
-emp["Cluster"] = int(dist.idxmin())
+    centroids = df.groupby("Cluster")[["Performance_Index","Leadership_Index","Potential_Index"]].mean()
 
-info = cluster_map.get(emp["Cluster"])
+    # Hitung jarak aman
+    try:
+        dist = ((centroids - [
+            emp["Performance_Index"],
+            emp["Leadership_Index"],
+            emp["Potential_Index"]
+        ])**2).sum(axis=1)
 
-# =============================================
-# RENDER OVERVIEW
-# =============================================
+        emp["Cluster"] = int(dist.idxmin())
 
+    except:
+        emp["Cluster"] = None
+
+else:
+    emp["Cluster"] = None
+
+# Jika cluster tidak ditemukan → berikan placeholder "-"
+if emp["Cluster"] is None:
+    info = {"Characteristics":"—","Description":"—","HR_Recommendations":"—","HR_Programs":"—"}
+else:
+    info = cluster_map.get(emp["Cluster"], {
+        "Characteristics":"—",
+        "Description":"—",
+        "HR_Recommendations":"—",
+        "HR_Programs":"—"
+    })
+
+# ==================================================================
+# OVERVIEW
+# ==================================================================
 st.markdown("### Overview")
-col1, col2 = st.columns(2)
-col1.markdown(small_card("Age", emp["Age"]), unsafe_allow_html=True)
-col2.markdown(small_card("Position Level", emp["Current_Position_Level"]), unsafe_allow_html=True)
 
-# =============================================
-# KEY INDEXES (3 Cards)
-# =============================================
+oo1,oo2,oo3 = st.columns(3)
+oo1.markdown(small_card("Employee ID", emp.get("Employee_ID","—")), unsafe_allow_html=True)
+oo2.markdown(small_card("Age", emp["Age"]), unsafe_allow_html=True)
+oo3.markdown(small_card("Position Level", emp["Current_Position_Level"]), unsafe_allow_html=True)
 
+# ==================================================================
+# INDEXES
+# ==================================================================
 st.markdown("### Key Talent Indexes")
 
 avg_perf = df["Performance_Index"].mean()
 avg_lead = df["Leadership_Index"].mean()
 avg_pot  = df["Potential_Index"].mean()
 
-color_perf = "#00bf63" if emp["Performance_Index"] >= avg_perf else "#ff5757"
-color_lead = "#00bf63" if emp["Leadership_Index"] >= avg_lead else "#ff5757"
-color_pot  = "#00bf63" if emp["Potential_Index"] >= avg_pot else "#ff5757"
+c1,c2,c3 = st.columns(3)
 
-i1, i2, i3 = st.columns(3)
-i1.markdown(small_card("Performance Index", f"{emp['Performance_Index']:.2f} | Avg {avg_perf:.2f}", color_perf), unsafe_allow_html=True)
-i2.markdown(small_card("Leadership Index", f"{emp['Leadership_Index']:.2f} | Avg {avg_lead:.2f}", color_lead), unsafe_allow_html=True)
-i3.markdown(small_card("Potential Index", f"{emp['Potential_Index']:.2f} | Avg {avg_pot:.2f}", color_pot), unsafe_allow_html=True)
+c1.markdown(
+    small_card(
+        "Performance Index",
+        f"{emp['Performance_Index']:.2f} | Avg {avg_perf:.2f}",
+        "#00bf63" if emp["Performance_Index"] >= avg_perf else "#ff5757"
+    ),
+    unsafe_allow_html=True
+)
 
-# =============================================
-# CHARACTER + CLUSTER
-# =============================================
+c2.markdown(
+    small_card(
+        "Leadership Index",
+        f"{emp['Leadership_Index']:.2f} | Avg {avg_lead:.2f}",
+        "#00bf63" if emp["Leadership_Index"] >= avg_lead else "#ff5757"
+    ),
+    unsafe_allow_html=True
+)
 
+c3.markdown(
+    small_card(
+        "Potential Index",
+        f"{emp['Potential_Index']:.2f} | Avg {avg_pot:.2f}",
+        "#00bf63" if emp["Potential_Index"] >= avg_pot else "#ff5757"
+    ),
+    unsafe_allow_html=True
+)
+
+# ==================================================================
+# CHARACTER & HR INSIGHTS
+# ==================================================================
 st.markdown("### Character")
-cc1, cc2 = st.columns(2)
 
-cc1.markdown(small_card("Cluster", emp["Cluster"]), unsafe_allow_html=True)
-cc2.markdown(small_card("Characteristics", info["Characteristics"]), unsafe_allow_html=True)
+# Atur proporsi: cluster kecil (0.25), characteristics besar (0.75)
+cc1, cc2 = st.columns([0.25, 0.75])
 
-# =============================================
-# DESCRIPTION + HR INSIGHT
-# =============================================
+# Card Cluster — kecil tapi tetap elegan
+cc1.markdown(
+    small_card("Cluster", emp["Cluster"]),
+    unsafe_allow_html=True
+)
+
+# Card Characteristics — lebar penuh, tidak menyisakan ruang kosong
+cc2.markdown(
+    small_card("Characteristics", info["Characteristics"]),
+    unsafe_allow_html=True
+)
 
 st.markdown(build_description_card(info["Description"]), unsafe_allow_html=True)
 st.markdown(long_card("HR Recommendations", info["HR_Recommendations"]), unsafe_allow_html=True)
