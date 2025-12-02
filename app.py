@@ -616,7 +616,10 @@ def manual_form():
     st.markdown("### Manual Input")
 
     age = st.number_input("Age", min_value=18, max_value=70, value=30, step=1)
-    perf = st.number_input("Performance Score", 0, 100, value=50, step=1)
+    perf = perf = st.selectbox(
+        "Performance Score (1–5)",
+        [1, 2, 3, 4, 5]
+    )
     lead = st.number_input("Leadership Score", 0, 100, value=50, step=1)
     train = st.number_input("Training Hours", 0, 500, value=20, step=1)
     proj = st.number_input("Projects Handled", 0, 100, value=5, step=1)
