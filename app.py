@@ -476,21 +476,21 @@ def metric_card(title, value):
 # ================================
 with col1:
     avg_performance = df['Performance_Index'].mean()
-    metric_card('Performance', f'{avg_performance:.2f}')
+    metric_card('Performance Idx', f'{avg_performance:.2f}')
 
 # ================================
 # Column 2
 # ================================
 with col2:
     avg_leadership = df['Leadership_Index'].mean()
-    metric_card('Leadership', f'{avg_leadership:.2f}')
+    metric_card('Leadership Idx', f'{avg_leadership:.2f}')
 
 # ================================
 # Column 3
 # ================================
 with col3:
     avg_potential = df['Potential_Index'].mean()
-    metric_card('Potential', f'{avg_potential:.2f}')
+    metric_card('Potential Idx', f'{avg_potential:.2f}')
 
 # =========================
 # High Risk Talent
@@ -584,7 +584,7 @@ df_ref = st.session_state["master_df"]  # working df reference
 # -------------------------------
 # Small Card Component (stable)
 # -------------------------------
-def small_card(title, value, color="white", bg="#2e307d", height_px=120):
+def small_card(title, value, color="white", bg="#2e307d"):
     return f"""
     <div style="
         border:3px solid #2e307d;
@@ -593,15 +593,14 @@ def small_card(title, value, color="white", bg="#2e307d", height_px=120):
         margin-bottom:15px;
         background-color:{bg};
         font-family:Inter, sans-serif;
-        height:{height_px}px;
+        min-height:120px;
         display:flex;
         flex-direction:column;
-        justify-content:space-between;
     ">
         <h3 style="margin:0; padding:0; color:white; font-size:20px;">
             {title}
         </h3>
-        <div style="margin-top:6px; display:flex; align-items:center;">
+        <div style="margin-top:12px;">
             <span style="font-size:22px; font-weight:400; color:{color};">
                 {value}
             </span>
@@ -794,9 +793,9 @@ if is_empty:
 
     st.markdown("### Key Talent Indexes")
     ki1,ki2,ki3 = st.columns(3)
-    ki1.markdown(small_card("Performance Index", "—"), unsafe_allow_html=True)
-    ki2.markdown(small_card("Leadership Index", "—"), unsafe_allow_html=True)
-    ki3.markdown(small_card("Potential Index", "—"), unsafe_allow_html=True)
+    ki1.markdown(small_card("Performance Idx", "—"), unsafe_allow_html=True)
+    ki2.markdown(small_card("Leadership Idx", "—"), unsafe_allow_html=True)
+    ki3.markdown(small_card("Potential Idx", "—"), unsafe_allow_html=True)
 
     st.markdown("### Character")
     cc1,cc2 = st.columns([0.25,0.75])
@@ -869,29 +868,30 @@ avg_pot  = df_ref["Potential_Index"].mean() if "Potential_Index" in df_ref.colum
 c1,c2,c3 = st.columns(3)
 c1.markdown(
     small_card(
-        "Performance Index",
+        "Performance Idx",
         f"{emp['Performance_Index']:.2f} | Avg {avg_perf:.2f}",
         "#00bf63" if emp["Performance_Index"] >= avg_perf else "#ff5757"
     ),
     unsafe_allow_html=True
 )
+
 c2.markdown(
     small_card(
-        "Leadership Index",
+        "Leadership Idx",
         f"{emp['Leadership_Index']:.2f} | Avg {avg_lead:.2f}",
         "#00bf63" if emp["Leadership_Index"] >= avg_lead else "#ff5757"
     ),
     unsafe_allow_html=True
 )
+
 c3.markdown(
     small_card(
-        "Potential Index",
+        "Potential Idx",
         f"{emp['Potential_Index']:.2f} | Avg {avg_pot:.2f}",
         "#00bf63" if emp["Potential_Index"] >= avg_pot else "#ff5757"
     ),
     unsafe_allow_html=True
 )
-
 # -----------------------------
 # CHARACTER & HR INSIGHTS (proportional)
 # -----------------------------
