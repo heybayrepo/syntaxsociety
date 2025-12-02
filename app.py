@@ -563,23 +563,22 @@ elif risk_category == 'Low Potential':
     )
 
 # =============================================
-# 🔮 TALENT PREDICTOR — REVISED VERSION
+# 🔮 TALENT PREDICTOR (FINAL FIXED VERSION)
 # =============================================
 
 st.markdown("## 🔎 Talent Predictor")
+st.markdown("### Select Talent Input Method")
 
-# ======================================================
-# 0. Load cluster → HR mapping (once)
-# ======================================================
-cluster_map = (
-    df[["Cluster","Characteristics","Description",
-        "HR_Recommendations","HR_Programs"]]
-    .drop_duplicates("Cluster")
-    .set_index("Cluster")
-    .to_dict("index")
+mode = st.radio(
+    "",
+    ["Select employee ID", "Add new employee manually", "Upload employee data in bulk using CSV"],
+    horizontal=True
 )
 
-# Card style
+# =============================================
+# CARD COMPONENTS — WAJIB ADA DI ATAS
+# =============================================
+
 def small_card(title, value, color="white"):
     return f"""
     <div style="
@@ -588,49 +587,104 @@ def small_card(title, value, color="white"):
         padding:16px;
         margin-bottom:15px;
         background-color:#2e307d;
+        font-family:Inter, sans-serif;
     ">
-        <div style="font-size:20px; font-weight:600; color:white;">
+        <h3 style="margin:0; padding:0; color:white; font-size:20px;">
             {title}
-        </div>
-        <div style="margin-top:10px; font-size:24px; color:{color}; font-weight:500;">
-            {value}
+        </h3>
+        <div style="margin-top:10px;">
+            <span style="font-size:22px; font-weight:400; color:{color};">
+                {value}
+            </span>
         </div>
     </div>
     """
 
-# ======================================================
-# 1. INPUT MODE
-# ======================================================
-st.markdown("### Select Talent Input Method")
+def build_description_card(text):
+    return f"""
+    <div style="
+        width:100%; border:3px solid #2e307d; border-radius:12px;
+        padding:20px; margin-top:20px; background-color:#2e307d;
+        font-family:Inter, sans-serif;
+    ">
+        <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
+            Description
+        </div>
+        <div style="font-size:18px; line-height:1.5; color:#dddddd;">
+            {text}
+        </div>
+    </div>
+    """
 
-mode = st.radio(
-    "",
-    ["Select current employee", "Add new employee manually", "Upload employee data in bulk using CSV"],
-    horizontal=True
+def long_card(title, content):
+    return f"""
+    <div style='width:100%; border:3px solid #2e307d; border-radius:12px;
+                padding:20px; margin-top:20px; background-color:#00bf63;
+                font-family:Inter, sans-serif;'>
+        <div style='font-size:22px; font-weight:700; margin-bottom:12px; color:white;'>{title}</div>
+        <div style='font-size:18px; line-height:1.6; color:white;'>{content}</div>
+    </div>
+    """
+
+# =============================================
+# PREPARE HR CLUSTER MAPPING
+# =============================================
+
+cluster_map = (
+    df[["Cluster","Characteristics","Description","HR_Recommendations","HR_Programs"]]
+    .drop_duplicates("Cluster")
+    .set_index("Cluster")
+    .to_dict("index")
 )
 
-# ======================================================
-# 2. MANUAL INPUT
-# ======================================================
-def manual_form():
-    st.markdown("### Manual Input")
+# ========================================================
+# 1) MODE: SELECT EMPLOYEE ID
+# ========================================================
 
-    age = st.number_input("Age", min_value=18, max_value=70, value=30, step=1)
-    perf = perf = st.selectbox(
-        "Performance Score (1–5)",
-        [1, 2, 3, 4, 5]
-    )
-    lead = st.number_input("Leadership Score", 0, 100, value=50, step=1)
-    train = st.number_input("Training Hours", 0, 500, value=20, step=1)
-    proj = st.number_input("Projects Handled", 0, 100, value=5, step=1)
-    peer = st.number_input("Peer Review Score", 0, 100, value=60, step=1)
+if mode == "Select employee ID":
+    st.markdown("#### Select Current Employee")
 
-    level = st.selectbox(
-        "Current Position Level",
-        ["Junior","Mid","Senior","Lead"]
-    )
+    colA, colB = st.columns([1,1])
 
-    return {
+    with colA:
+        emp_dropdown = st.selectbox(
+            "Select Employee ID:",
+            df["Employee_ID"].unique(),
+            key="tp_dropdown"
+        )
+
+    with colB:
+        typed_id = st.text_input(
+            "Or type Employee ID:",
+            placeholder="e.g. EMP0057",
+            key="tp_typed"
+        )
+
+    # Prioritize typed ID if valid
+    if typed_id.strip() in df["Employee_ID"].values:
+        emp_row = df[df["Employee_ID"] == typed_id.strip()].iloc[0]
+    else:
+        emp_row = df[df["Employee_ID"] == emp_dropdown].iloc[0]
+
+    emp = emp_row.to_dict()
+
+
+# ========================================================
+# 2) MODE: ADD NEW EMPLOYEE MANUALLY
+# ========================================================
+
+elif mode == "Add new employee manually":
+    st.markdown("### Add New Employee Manually")
+
+    age   = st.number_input("Age", min_value=18, max_value=70, value=25)
+    perf  = st.selectbox("Performance Score (1–5)", [1,2,3,4,5])
+    lead  = st.number_input("Leadership Score", 0.0, 100.0, value=50.0)
+    train = st.number_input("Training Hours", 0.0, 500.0, value=0.0)
+    proj  = st.number_input("Projects Handled", 0.0, 100.0, value=0.0)
+    peer  = st.number_input("Peer Review Score", 0.0, 100.0, value=50.0)
+    level = st.selectbox("Current Position Level", ["Junior","Mid","Senior","Lead"])
+
+    emp = {
         "Age": age,
         "Performance_Score": perf,
         "Leadership_Score": lead,
@@ -640,173 +694,51 @@ def manual_form():
         "Current_Position_Level": level
     }
 
-# ======================================================
-# 3. UPLOAD CSV
-# ======================================================
-template_df = pd.DataFrame({
-    "Employee_ID":["EMP0001"],
-    "Age":[30],
-    "Performance_Score":[80],
-    "Leadership_Score":[70],
-    "Training_Hours":[40],
-    "Projects_Handled":[5],
-    "Peer_Review_Score":[85],
-    "Current_Position_Level":["Senior"]
-})
-csv_template = template_df.to_csv(index=False)
-
-uploaded_df = None
-
-if mode == "Upload employee data in bulk using CSV":
-    st.markdown("*Note: Please follow this exact format.*")
-    st.download_button("Download template CSV", csv_template, "employee_template.csv")
-
-    uploaded_file = st.file_uploader("Upload CSV:", type=["csv"])
-    if uploaded_file:
-        uploaded_df = pd.read_csv(uploaded_file)
-
-# ======================================================
-# 4. DETERMINE EMPLOYEE INPUT
-# ======================================================
-emp = None
-
-if mode == "Select current employee":
-    emp_id = st.selectbox("Select Employee ID:", df["Employee_ID"].unique())
-    emp = df[df["Employee_ID"] == emp_id].iloc[0].to_dict()
-
-elif mode == "Add new employee manually":
-    emp = manual_form()
+# ========================================================
+# 3) MODE: UPLOAD CSV
+# ========================================================
 
 elif mode == "Upload employee data in bulk using CSV":
-    if uploaded_df is not None and len(uploaded_df) > 0:
-        emp = uploaded_df.iloc[0].to_dict()
-    else:
+    st.markdown("*Upload a CSV following the required employee format.*")
+
+    template_df = pd.DataFrame({
+        "Employee_ID":["EMP0001"],
+        "Age":[30],
+        "Performance_Score":[5],
+        "Leadership_Score":[60],
+        "Training_Hours":[40],
+        "Projects_Handled":[5],
+        "Peer_Review_Score":[75],
+        "Current_Position_Level":["Senior"]
+    })
+    st.download_button("Download template CSV", template_df.to_csv(index=False), "template.csv")
+
+    uploaded_file = st.file_uploader("Upload CSV:", type=["csv"])
+    if uploaded_file is None:
         st.stop()
 
-if emp is None:
-    st.warning("Please provide employee data.")
-    st.stop()
+    uploaded_df = pd.read_csv(uploaded_file)
+    emp = uploaded_df.iloc[0].to_dict()
 
-# ======================================================
-# 5. FEATURE ENGINEERING
-# ======================================================
+# =============================================
+# FEATURE ENGINEERING
+# =============================================
+
+for key in ["Leadership_Score","Peer_Review_Score","Performance_Score","Projects_Handled","Training_Hours"]:
+    if key not in emp:
+        emp[key] = 0
+
 emp["Leadership_Index"] = 0.4*emp["Leadership_Score"] + 0.6*emp["Peer_Review_Score"]
-emp["Performance_Index"] = (
-    0.5*emp["Performance_Score"] +
-    0.2*emp["Projects_Handled"] +
-    0.3*emp["Peer_Review_Score"]
-)
-emp["Potential_Index"] = (
-    0.4*emp["Training_Hours"] +
-    0.4*emp["Peer_Review_Score"] +
-    0.2*emp["Leadership_Score"]
-)
+emp["Performance_Index"] = 0.5*emp["Performance_Score"] + 0.2*emp["Projects_Handled"] + 0.3*emp["Peer_Review_Score"]
+emp["Potential_Index"] = 0.4*emp["Training_Hours"] + 0.4*emp["Peer_Review_Score"] + 0.2*emp["Leadership_Score"]
 
-# ======================================================
-# 6. CLUSTER PREDICTION
-# ======================================================
+# =============================================
+# CLUSTER PREDICTION (NEAREST CENTROID)
+# =============================================
+
 centroids = df.groupby("Cluster")[["Performance_Index","Leadership_Index","Potential_Index"]].mean()
 dist = ((centroids - [
     emp["Performance_Index"],
     emp["Leadership_Index"],
     emp["Potential_Index"]
-])**2).sum(axis=1)
-
-emp["Cluster"] = dist.idxmin()
-
-# ======================================================
-# 7. HR INFO
-# ======================================================
-info = cluster_map.get(emp["Cluster"])
-
-# ======================================================
-# 8. OVERVIEW
-# ======================================================
-st.markdown("### Overview")
-c1, c2 = st.columns(2)
-
-c1.markdown(small_card("Age", int(emp["Age"])), unsafe_allow_html=True)
-c2.markdown(small_card("Position Level", emp["Current_Position_Level"]), unsafe_allow_html=True)
-
-# ======================================================
-# 9. INDEX CARDS — ***3 INDEX ONLY, IN 1 ROW (3 COLUMNS)***
-# ======================================================
-st.markdown("### Key Talent Indexes")
-
-avg_perf  = df["Performance_Index"].mean()
-avg_lead  = df["Leadership_Index"].mean()
-avg_pot   = df["Potential_Index"].mean()
-
-i_col1, i_col2, i_col3 = st.columns(3)
-
-# Performance
-color_perf = "#00bf63" if emp["Performance_Index"] >= avg_perf else "#ff5757"
-i_col1.markdown(
-    small_card(
-        "Performance Index",
-        f"{emp['Performance_Index']:.2f} | Avg {avg_perf:.2f}",
-        color=color_perf
-    ),
-    unsafe_allow_html=True
-)
-
-# Leadership
-color_lead = "#00bf63" if emp["Leadership_Index"] >= avg_lead else "#ff5757"
-i_col2.markdown(
-    small_card(
-        "Leadership Index",
-        f"{emp['Leadership_Index']:.2f} | Avg {avg_lead:.2f}",
-        color=color_lead
-    ),
-    unsafe_allow_html=True
-)
-
-# Potential
-color_pot = "#00bf63" if emp["Potential_Index"] >= avg_pot else "#ff5757"
-i_col3.markdown(
-    small_card(
-        "Potential Index",
-        f"{emp['Potential_Index']:.2f} | Avg {avg_pot:.2f}",
-        color=color_pot
-    ),
-    unsafe_allow_html=True
-)
-
-# ======================================================
-# 10. CLUSTER + CHARACTERISTICS
-# ======================================================
-st.markdown("### Character")
-
-cc1, cc2 = st.columns(2)
-cc1.markdown(small_card("Cluster", emp["Cluster"]), unsafe_allow_html=True)
-cc2.markdown(small_card("Characteristics", info["Characteristics"]), unsafe_allow_html=True)
-
-# ======================================================
-# 11. DESCRIPTION + HR RECOMMENDATION
-# ======================================================
-desc_card = f"""
-<div style="
-    width:100%; border:3px solid #2e307d; border-radius:12px;
-    padding:20px; margin-top:20px; background-color:#2e307d;
-">
-    <div style="font-size:22px; font-weight:700; margin-bottom:12px; color:white;">
-        Description
-    </div>
-    <div style="font-size:18px; line-height:1.5; color:#dddddd;">
-        {info["Description"]}
-    </div>
-</div>
-"""
-st.markdown(desc_card, unsafe_allow_html=True)
-
-def long_card(title, content):
-    return f"""
-    <div style='width:100%; border:3px solid #2e307d; border-radius:12px;
-                padding:20px; margin-top:20px; background-color:#00bf63;'>
-        <div style='font-size:22px; font-weight:700; margin-bottom:12px; color:white;'>{title}</div>
-        <div style='font-size:18px; line-height:1.6; color:white;'>{content}</div>
-    </div>
-    """
-
-st.markdown(long_card("HR Recommendations", info["HR_Recommendations"]), unsafe_allow_html=True)
-st.markdown(long_card("Recommended Development Program", info["HR_Programs"]), unsafe_allow_html=True)
+])**2).
