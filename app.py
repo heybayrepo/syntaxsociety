@@ -741,4 +741,54 @@ dist = ((centroids - [
     emp["Performance_Index"],
     emp["Leadership_Index"],
     emp["Potential_Index"]
-])**2).
+])**2).sum(axis=1)
+
+emp["Cluster"] = int(dist.idxmin())
+
+info = cluster_map.get(emp["Cluster"])
+
+# =============================================
+# RENDER OVERVIEW
+# =============================================
+
+st.markdown("### Overview")
+col1, col2 = st.columns(2)
+col1.markdown(small_card("Age", emp["Age"]), unsafe_allow_html=True)
+col2.markdown(small_card("Position Level", emp["Current_Position_Level"]), unsafe_allow_html=True)
+
+# =============================================
+# KEY INDEXES (3 Cards)
+# =============================================
+
+st.markdown("### Key Talent Indexes")
+
+avg_perf = df["Performance_Index"].mean()
+avg_lead = df["Leadership_Index"].mean()
+avg_pot  = df["Potential_Index"].mean()
+
+color_perf = "#00bf63" if emp["Performance_Index"] >= avg_perf else "#ff5757"
+color_lead = "#00bf63" if emp["Leadership_Index"] >= avg_lead else "#ff5757"
+color_pot  = "#00bf63" if emp["Potential_Index"] >= avg_pot else "#ff5757"
+
+i1, i2, i3 = st.columns(3)
+i1.markdown(small_card("Performance Index", f"{emp['Performance_Index']:.2f} | Avg {avg_perf:.2f}", color_perf), unsafe_allow_html=True)
+i2.markdown(small_card("Leadership Index", f"{emp['Leadership_Index']:.2f} | Avg {avg_lead:.2f}", color_lead), unsafe_allow_html=True)
+i3.markdown(small_card("Potential Index", f"{emp['Potential_Index']:.2f} | Avg {avg_pot:.2f}", color_pot), unsafe_allow_html=True)
+
+# =============================================
+# CHARACTER + CLUSTER
+# =============================================
+
+st.markdown("### Character")
+cc1, cc2 = st.columns(2)
+
+cc1.markdown(small_card("Cluster", emp["Cluster"]), unsafe_allow_html=True)
+cc2.markdown(small_card("Characteristics", info["Characteristics"]), unsafe_allow_html=True)
+
+# =============================================
+# DESCRIPTION + HR INSIGHT
+# =============================================
+
+st.markdown(build_description_card(info["Description"]), unsafe_allow_html=True)
+st.markdown(long_card("HR Recommendations", info["HR_Recommendations"]), unsafe_allow_html=True)
+st.markdown(long_card("Recommended Development Program", info["HR_Programs"]), unsafe_allow_html=True)
