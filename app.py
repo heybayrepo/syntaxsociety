@@ -13,7 +13,7 @@ from io import BytesIO
 # -----------------------------------------------------------
 # PAGE CONFIG
 # -----------------------------------------------------------
-st.set_page_config(page_title="Rakamin HR Intelligence Hub", layout="wide")
+# st.set_page_config(page_title="Rakamin HR Intelligence Hub", layout="wide")
 
 # -----------------------------------------------------------
 # LOAD INITIAL DATASET (adjust path if needed)
