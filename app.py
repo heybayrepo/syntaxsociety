@@ -775,53 +775,262 @@ with tab3:
     # ----------------------------------------------------------------------
     globals()["df"] = st.session_state["master_df"]
 
-# ---------------------------------------------------------
-# Promotion Eligibility Prediction (uses existing emp values)
-# ---------------------------------------------------------
-
-st.markdown("## 🧠 Promotion Eligibility (Logistic Regression)")
-
+# -------------------------------------------------------------------------
+# Promotion Eligibility Prediction — FINAL REPLACEMENT BLOCK (paste here)
+# -------------------------------------------------------------------------
+import math
+import base64
+from io import BytesIO
+import matplotlib.pyplot as plt
+import numpy as np
+import streamlit as st
+import streamlit.components.v1 as components
 import joblib
 import pandas as pd
 
-# Load model
+st.markdown("## 🧠 Predict Promotion Eligibility")
+
+# --- load model safely ---
 try:
     lr_model = joblib.load("logistic_pipeline.pkl")
-except:
+except Exception:
     st.error("Model logistic_pipeline.pkl tidak ditemukan.")
     st.stop()
 
-# Pastikan emp sudah terisi (mode 1 atau 2 pada predictor)
-if not emp:
-    st.info("Isi data talent terlebih dahulu di bagian atas untuk menghitung eligibility promosi.")
+# --- input guard ---
+if not emp or not isinstance(emp, (dict, pd.Series)):
+    st.info("Isi data talent terlebih dahulu.")
     st.stop()
 
-# Siapkan dataframe untuk prediksi
-input_df = pd.DataFrame([{
-    "Age": emp.get("Age", 0),
-    "Performance_Index": emp.get("Performance_Index", 0),
-    "Leadership_Index": emp.get("Leadership_Index", 0),
-    "Potential_Index": emp.get("Potential_Index", 0),
-    "Training_Hours": emp.get("Training_Hours", 0),
-    "Peer_Review_Score": emp.get("Peer_Review_Score", 0),
-    "Projects_Handled": emp.get("Projects_Handled", 0),
-    "Performance_Consistency": emp.get("Performance_Consistency", 0),
-    "Growth_Momentum": emp.get("Growth_Momentum", 0)
-}])
+# --- helper ---
+def safe_get(d, key, default=0.0):
+    try:
+        v = d.get(key, default)
+        return float(v) if v is not None else default
+    except:
+        return default
 
-if st.button("🔮 Predict Promotion Eligibility"):
-    pred = lr_model.predict(input_df)[0]
-    proba = lr_model.predict_proba(input_df)[0][1]
+# --- prepare data ---
+input_dict = {
+    "Age": safe_get(emp, "Age"),
+    "Performance_Index": safe_get(emp, "Performance_Index"),
+    "Leadership_Index": safe_get(emp, "Leadership_Index"),
+    "Potential_Index": safe_get(emp, "Potential_Index"),
+    "Training_Hours": safe_get(emp, "Training_Hours"),
+    "Peer_Review_Score": safe_get(emp, "Peer_Review_Score"),
+    "Projects_Handled": safe_get(emp, "Projects_Handled"),
+    "Performance_Consistency": safe_get(emp, "Performance_Consistency"),
+    "Growth_Momentum": safe_get(emp, "Growth_Momentum"),
+}
+input_df = pd.DataFrame([input_dict])
 
-    color = "#00bf63" if pred == 1 else "#ff5757"
-    label = "Eligible for Promotion" if pred == 1 else "Not Eligible"
+promotion_score = (
+    0.30 * safe_get(emp, "Performance_Index") +
+    0.25 * safe_get(emp, "Potential_Index") +
+    0.20 * safe_get(emp, "Leadership_Index") +
+    0.15 * safe_get(emp, "Performance_Consistency") +
+    0.10 * safe_get(emp, "Growth_Momentum")
+)
 
-    st.markdown(f"""
-        <div style='border:3px solid {color}; padding:20px; border-radius:12px; background:#2e307d; margin-top:20px'>
-            <h3 style='color:white;'>Promotion Prediction</h3>
-            <div style='font-size:32px; font-weight:700; color:{color}; margin-top:10px;'>{label}</div>
-            <div style='font-size:18px; color:white; margin-top:10px;'>
-                Probability Score: <b>{proba:.3f}</b>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+# threshold
+try:
+    df_promo = (
+        0.30 * df["Performance_Index"] +
+        0.25 * df["Potential_Index"] +
+        0.20 * df["Leadership_Index"] +
+        0.15 * df["Performance_Consistency"] +
+        0.10 * df["Growth_Momentum"]
+    )
+    promo_threshold = df_promo.quantile(0.85)
+except:
+    promo_threshold = float("nan")
+
+run_prediction = st.button("🔮 Predict Promotion Eligibility", key="predict_now_big")
+
+if run_prediction:
+    try:
+        pred = int(lr_model.predict(input_df)[0])
+        is_eligible = (pred == 1)
+        status_color = "#00bf63" if is_eligible else "#ff5757"
+
+        promo_str = f"{promotion_score:.2f}"
+        thr_str = f"{promo_threshold:.2f}"
+
+        # ============================
+        # 1) WHY THIS RESULT LOGIC
+        # ============================
+        features_raw = [
+            "Performance_Score","Leadership_Score","Peer_Review_Score",
+            "Training_Hours","Projects_Handled","Performance_Consistency","Growth_Momentum"
+        ]
+
+        vals = {f: safe_get(emp, f) for f in features_raw}
+        means = {}
+        q75s = {}
+
+        for f in features_raw:
+            try:
+                means[f] = float(df[f].mean())
+                q75s[f] = float(df[f].quantile(0.75))
+            except:
+                means[f] = float("nan")
+                q75s[f] = float("nan")
+
+        strengths, weaknesses = [], []
+
+        for f in features_raw:
+            v, avg, q75 = vals[f], means[f], q75s[f]
+
+            if np.isnan(avg):
+                continue
+
+            if is_eligible:
+                if not np.isnan(q75) and v >= q75:
+                    strengths.append((f, v, avg))
+                elif v < avg:
+                    weaknesses.append((f, v, avg))
+            else:
+                if v < avg:
+                    weaknesses.append((f, v, avg))
+                elif not np.isnan(q75) and v >= q75:
+                    strengths.append((f, v, avg))
+
+        # ============================
+        # 2) TALENT RADAR CHART
+        # ============================
+        angles = np.linspace(0, 2*np.pi, len(features_raw), endpoint=False).tolist()
+        angles += angles[:1]
+
+        emp_plot = [vals[f] for f in features_raw] + [vals[features_raw[0]]]
+        avg_plot = [
+            means[f] if not np.isnan(means[f]) else 0 for f in features_raw
+        ] + [means[features_raw[0]] if not np.isnan(means[features_raw[0]]) else 0]
+
+        fig, ax = plt.subplots(figsize=(7,7), subplot_kw=dict(polar=True))
+        fig.patch.set_alpha(0)
+        ax.set_facecolor("none")
+
+        ax.plot(angles, avg_plot, color="#bbbbbb", linewidth=2, linestyle="dashed")
+        ax.fill(angles, avg_plot, alpha=0.06, color="#bbbbbb")
+
+        ax.plot(angles, emp_plot, color="#00bf63", linewidth=3)
+        ax.fill(angles, emp_plot, alpha=0.20, color="#00bf63")
+
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels([f.replace("_", " ") for f in features_raw], color="white", fontsize=11)
+        ax.grid(color="white", alpha=0.35)
+        for spine in ax.spines.values():
+            spine.set_color("white")
+
+        buf = BytesIO()
+        plt.savefig(buf, dpi=140, format="png", bbox_inches="tight", pad_inches=0.45)
+        buf.seek(0)
+        radar_b64 = base64.b64encode(buf.read()).decode()
+        plt.close(fig)
+
+        # ============================
+        # 3) SUCCESSION LOGIC
+        # ============================
+        thr = promo_threshold
+        p = promotion_score
+
+        if np.isnan(p) or np.isnan(thr):
+            lvl, col = "Unknown", "#999"
+            dev = ["Insufficient data."]
+        else:
+            if p >= thr:
+                lvl, col = "High Successor Potential", "#00bf63"
+                dev = [
+                    "Provide advanced leadership exposure.",
+                    "Start formal succession mentoring.",
+                    "Assess readiness for expanded scope."
+                ]
+            elif p >= 0.9 * thr:
+                lvl, col = "Emerging Successor", "#ffaa00"
+                dev = [
+                    "Start mid-level leadership coaching.",
+                    "Increase cross-functional visibility.",
+                    "Gradually expand responsibilities."
+                ]
+            else:
+                lvl, col = "Low Successor Potential", "#ff5757"
+                dev = [
+                    "Strengthen foundational competencies.",
+                    "Improve peer collaboration & influence.",
+                    "Join capability-building programs."
+                ]
+
+        dev_items = "".join(
+            [f"<li style='margin-top:6px;font-size:16px;color:white'>{d}</li>" for d in dev]
+        )
+
+        # ======================================================
+        #  █████ ONE BIG CARD — ALL SECTIONS INSIDE ONE CARD ████
+        # ======================================================
+        big_html = f"""
+<div style="background:#2e307d; border-radius:24px; padding:30px; width:100%;
+            box-sizing:border-box; font-family:Inter, sans-serif; color:white;">
+
+    <!-- PROMOTION PREDICTION -->
+    <h2 style="font-size:32px; font-weight:800;">Promotion Prediction</h2>
+    <div style="margin-top:10px; font-size:36px; font-weight:800; color:{status_color};">
+        {'Eligible for Promotion' if is_eligible else 'Not Eligible'}
+    </div>
+    <div style="margin-top:10px; font-size:20px;">
+        Promotion Score:
+        <b style="color:{status_color}; font-size:24px;">{promo_str}</b>
+        &nbsp;·&nbsp;
+        Threshold (Q85):
+        <b style="color:white; font-size:24px;">{thr_str}</b>
+    </div>
+
+    <!-- WHY THIS RESULT -->
+    <h2 style="margin-top:28px; font-size:28px; font-weight:800;">Why This Result?</h2>
+    <div style="margin-top:6px; font-size:17px;">
+"""
+
+        # weaknesses
+        for f, v, avg in weaknesses:
+            big_html += f"""
+        <div style="margin-top:10px;">
+            <b>{f.replace("_"," ")}:</b>
+            <span style="color:#ff5757; font-weight:700">{v:.1f}</span>
+            <span style="color:#bbb">(avg {avg:.1f})</span>
+        </div>"""
+
+        # strengths
+        if strengths:
+            big_html += "<div style='margin-top:18px;font-weight:700;'>Strengths:</div>"
+            for f, v, avg in strengths:
+                big_html += f"""
+        <div style="margin-top:6px;">
+            <b>{f.replace("_"," ")}:</b>
+            <span style="color:#00bf63; font-weight:700">{v:.1f}</span>
+            <span style="color:#bbb'>(avg {avg:.1f})</span>
+        </div>"""
+
+        # radar chart block
+        big_html += f"""
+    <!-- TALENT RADAR -->
+    <h2 style="margin-top:32px; font-size:28px; font-weight:800;">Talent Radar Chart</h2>
+    <div style="width:100%;border-radius:18px;overflow:hidden;margin-top:10px;">
+        <img src="data:image/png;base64,{radar_b64}" style="width:100%;display:block;">
+    </div>
+
+    <!-- SUCCESSION -->
+    <h2 style="margin-top:32px; font-size:28px; font-weight:800;">Succession Potential Indicator</h2>
+    <div style="margin-top:10px; font-size:22px; font-weight:800; color:{col};">
+        {lvl}
+    </div>
+    <div style="margin-top:10px; font-size:16px; color:#ddd;">Recommended Development Actions:</div>
+    <ul style="margin-top:6px; padding-left:22px;">
+        {dev_items}
+    </ul>
+</div>
+"""
+
+        components.html(f"<div class='full-width-container'>{big_html}</div>", height=1500, scrolling=False)
+
+    except Exception as e:
+        st.error("Error during prediction.")
+        st.code(traceback.format_exc())
