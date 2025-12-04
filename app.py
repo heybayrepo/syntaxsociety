@@ -1000,14 +1000,15 @@ if run_prediction:
 
         # strengths
         if strengths:
-            big_html += "<div style='margin-top:18px;font-weight:700;'>Strengths:</div>"
+            big_html += "<div style='margin-top:18px; font-weight:700;'>Strengths:</div>"
             for f, v, avg in strengths:
                 big_html += f"""
-        <div style="margin-top:6px;">
-            <b>{f.replace("_"," ")}:</b>
-            <span style="color:#00bf63; font-weight:700">{v:.1f}</span>
-            <span style="color:#bbb'>(avg {avg:.1f})</span>
-        </div>"""
+                <div style="margin-top:8px; font-size:17px;">
+                    <b>{f.replace("_"," ")}:</b>
+                    <span style="color:#00bf63; font-weight:700;">{v:.1f}</span>
+                    <span style="color:#bbb;">(avg {avg:.1f})</span>
+                </div>
+                """
 
         # radar chart block
         big_html += f"""
