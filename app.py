@@ -775,85 +775,53 @@ with tab3:
     # ----------------------------------------------------------------------
     globals()["df"] = st.session_state["master_df"]
 
-
-# ----------------------------------------------------------------------
-# Promotion Eligibility Predictor (Logistic Regression)
-# ----------------------------------------------------------------------
-
-import joblib
-import numpy as np
+# ---------------------------------------------------------
+# Promotion Eligibility Prediction (uses existing emp values)
+# ---------------------------------------------------------
 
 st.markdown("## 🧠 Promotion Eligibility (Logistic Regression)")
+
+import joblib
+import pandas as pd
 
 # Load model
 try:
     lr_model = joblib.load("logistic_pipeline.pkl")
 except:
-    st.error("Model logistic_pipeline.pkl tidak ditemukan. Train dulu sebelum menjalankan UI ini.")
+    st.error("Model logistic_pipeline.pkl tidak ditemukan.")
     st.stop()
 
-st.markdown("Isi data talent di bawah ini untuk memprediksi eligibility promosi.")
+# Pastikan emp sudah terisi (mode 1 atau 2 pada predictor)
+if not emp:
+    st.info("Isi data talent terlebih dahulu di bagian atas untuk menghitung eligibility promosi.")
+    st.stop()
 
-colA, colB, colC = st.columns(3)
+# Siapkan dataframe untuk prediksi
+input_df = pd.DataFrame([{
+    "Age": emp.get("Age", 0),
+    "Performance_Index": emp.get("Performance_Index", 0),
+    "Leadership_Index": emp.get("Leadership_Index", 0),
+    "Potential_Index": emp.get("Potential_Index", 0),
+    "Training_Hours": emp.get("Training_Hours", 0),
+    "Peer_Review_Score": emp.get("Peer_Review_Score", 0),
+    "Projects_Handled": emp.get("Projects_Handled", 0),
+    "Performance_Consistency": emp.get("Performance_Consistency", 0),
+    "Growth_Momentum": emp.get("Growth_Momentum", 0)
+}])
 
-with colA:
-    age = st.number_input("Age", min_value=18, max_value=70, value=30)
-    perf_idx = st.number_input("Performance Index", min_value=0.0, max_value=100.0, value=70.0)
-    lead_idx = st.number_input("Leadership Index", min_value=0.0, max_value=100.0, value=65.0)
-
-with colB:
-    pot_idx = st.number_input("Potential Index", min_value=0.0, max_value=100.0, value=68.0)
-    training = st.number_input("Training Hours", min_value=0, max_value=500, value=40)
-    peer = st.number_input("Peer Review Score", min_value=0.0, max_value=100.0, value=75.0)
-
-with colC:
-    projects = st.number_input("Projects Handled", min_value=0, max_value=100, value=5)
-    consistency = st.number_input("Performance Consistency", min_value=0.0, max_value=100.0, value=80.0)
-    growth = st.number_input("Growth Momentum", min_value=0.0, max_value=100.0, value=60.0)
-
-# Prepare input array
-input_features = np.array([[
-    age,
-    perf_idx,
-    lead_idx,
-    pot_idx,
-    training,
-    peer,
-    projects,
-    consistency,
-    growth
-]])
-
-predict_btn = st.button("🔮 Predict Eligibility")
-
-if predict_btn:
-    pred = lr_model.predict(input_features)[0]
-    proba = lr_model.predict_proba(input_features)[0][1]
+if st.button("🔮 Predict Promotion Eligibility"):
+    pred = lr_model.predict(input_df)[0]
+    proba = lr_model.predict_proba(input_df)[0][1]
 
     color = "#00bf63" if pred == 1 else "#ff5757"
     label = "Eligible for Promotion" if pred == 1 else "Not Eligible"
 
-    st.markdown(
-        f"""
-        <div style="
-            border:3px solid {color};
-            border-radius:12px;
-            padding:20px;
-            margin-top:20px;
-            background-color:#2e307d;
-        ">
-            <h3 style="color:white; margin:0; padding:0; font-size:26px;">
-                Promotion Prediction
-            </h3>
-
-            <div style="margin-top:15px; font-size:32px; font-weight:700; color:{color};">
-                {label}
-            </div>
-
-            <div style="margin-top:10px; font-size:18px; color:white;">
+    st.markdown(f"""
+        <div style='border:3px solid {color}; padding:20px; border-radius:12px; background:#2e307d; margin-top:20px'>
+            <h3 style='color:white;'>Promotion Prediction</h3>
+            <div style='font-size:32px; font-weight:700; color:{color}; margin-top:10px;'>{label}</div>
+            <div style='font-size:18px; color:white; margin-top:10px;'>
                 Probability Score: <b>{proba:.3f}</b>
             </div>
         </div>
-        """,
-        unsafe_allow_html=True
-    )
+    """, unsafe_allow_html=True)
