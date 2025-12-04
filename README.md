@@ -4,6 +4,8 @@
 Live Dashboard → **https://rakaminhrdashboard.streamlit.app/**  
 Repository → **https://github.com/heybayrepo/syntaxsociety**
 
+<img width="1497" height="841" alt="Screenshot 2025-11-21 at 14 41 40" src="https://github.com/user-attachments/assets/19422b7e-3274-42e5-a8d8-6461a5319354" />
+
 ---
 
 ## ⭐ Overview
