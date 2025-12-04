@@ -774,3 +774,86 @@ with tab3:
     # Save back to globals for compatibility with rest of app (optional)
     # ----------------------------------------------------------------------
     globals()["df"] = st.session_state["master_df"]
+
+
+# ----------------------------------------------------------------------
+# Promotion Eligibility Predictor (Logistic Regression)
+# ----------------------------------------------------------------------
+
+import joblib
+import numpy as np
+
+st.markdown("## 🧠 Promotion Eligibility (Logistic Regression)")
+
+# Load model
+try:
+    lr_model = joblib.load("logistic_pipeline.pkl")
+except:
+    st.error("Model logistic_pipeline.pkl tidak ditemukan. Train dulu sebelum menjalankan UI ini.")
+    st.stop()
+
+st.markdown("Isi data talent di bawah ini untuk memprediksi eligibility promosi.")
+
+colA, colB, colC = st.columns(3)
+
+with colA:
+    age = st.number_input("Age", min_value=18, max_value=70, value=30)
+    perf_idx = st.number_input("Performance Index", min_value=0.0, max_value=100.0, value=70.0)
+    lead_idx = st.number_input("Leadership Index", min_value=0.0, max_value=100.0, value=65.0)
+
+with colB:
+    pot_idx = st.number_input("Potential Index", min_value=0.0, max_value=100.0, value=68.0)
+    training = st.number_input("Training Hours", min_value=0, max_value=500, value=40)
+    peer = st.number_input("Peer Review Score", min_value=0.0, max_value=100.0, value=75.0)
+
+with colC:
+    projects = st.number_input("Projects Handled", min_value=0, max_value=100, value=5)
+    consistency = st.number_input("Performance Consistency", min_value=0.0, max_value=100.0, value=80.0)
+    growth = st.number_input("Growth Momentum", min_value=0.0, max_value=100.0, value=60.0)
+
+# Prepare input array
+input_features = np.array([[
+    age,
+    perf_idx,
+    lead_idx,
+    pot_idx,
+    training,
+    peer,
+    projects,
+    consistency,
+    growth
+]])
+
+predict_btn = st.button("🔮 Predict Eligibility")
+
+if predict_btn:
+    pred = lr_model.predict(input_features)[0]
+    proba = lr_model.predict_proba(input_features)[0][1]
+
+    color = "#00bf63" if pred == 1 else "#ff5757"
+    label = "Eligible for Promotion" if pred == 1 else "Not Eligible"
+
+    st.markdown(
+        f"""
+        <div style="
+            border:3px solid {color};
+            border-radius:12px;
+            padding:20px;
+            margin-top:20px;
+            background-color:#2e307d;
+        ">
+            <h3 style="color:white; margin:0; padding:0; font-size:26px;">
+                Promotion Prediction
+            </h3>
+
+            <div style="margin-top:15px; font-size:32px; font-weight:700; color:{color};">
+                {label}
+            </div>
+
+            <div style="margin-top:10px; font-size:18px; color:white;">
+                Probability Score: <b>{proba:.3f}</b>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
