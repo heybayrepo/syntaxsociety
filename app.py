@@ -922,10 +922,10 @@ with tab3:
             is_empty = False
 
     # ===========================================================
-    # 3) UPLOAD CSV
+    # 3) UPLOAD CSV  (FULL FIXED BLOCK)
     # ===========================================================
     elif mode == "Upload employee data in bulk using CSV":
-        st.markdown("*Upload a CSV following the required format.*")
+        st.markdown("Upload CSV")
 
         template = pd.DataFrame({
             "Employee_ID":["EMP0001"],
@@ -937,23 +937,86 @@ with tab3:
             "Peer_Review_Score":[75],
             "Current_Position_Level":["Senior"]
         })
+
         st.download_button("Download template CSV", template.to_csv(index=False), "template.csv")
 
         uploaded = st.file_uploader("Upload CSV:", type=["csv"])
+
         if uploaded:
             try:
                 new = pd.read_csv(uploaded)
+
                 required_cols = set(template.columns)
-                if not required_cols.issubset(set(new.columns)):
-                    st.error("Missing required columns in uploaded CSV. Use the template.")
+                if not required_cols.issubset(new.columns):
+
+                    # ❌ ERROR CARD (MERAH)
+                    st.markdown(
+                        """
+                        <div style="
+                            margin-top:18px;
+                            padding:22px;
+                            border-radius:14px;
+                            background-color:#ff4d4f;
+                            color:white;
+                            font-size:19px;
+                            font-weight:700;
+                            line-height:1.5;
+                        ">
+                            ✗ Missing required columns in uploaded CSV.<br>
+                            Please use the provided template.
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
                     st.stop()
 
+                # Compute FE + clusters for the new uploaded rows only
                 enriched = apply_feature_engineering_and_clustering(new.copy())
-                # append to master safely
+
+                # Append to existing dataset
                 st.session_state["master_df"] = pd.concat([df_ref, enriched], ignore_index=True)
-                st.success(f"Uploaded {len(new)} rows. Go to 'Select employee ID' to view/inspect.")
+
+                # ✅ SUCCESS CARD (HIJAU)
+                st.markdown(
+                    f"""
+                    <div style="
+                        margin-top:18px;
+                        padding:22px;
+                        border-radius:14px;
+                        background-color:#00bf63;
+                        color:white;
+                        font-size:19px;
+                        font-weight:700;
+                        line-height:1.5;
+                    ">
+                        ✓ Uploaded {len(new)} rows successfully.<br>
+                        Go to <strong>'Select employee ID'</strong> to view/inspect.
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
             except Exception as e:
-                st.error(f"Upload failed: {e}")
+
+                # ❌ ERROR CARD (MERAH – KESALAHAN LAIN)
+                st.markdown(
+                    f"""
+                    <div style="
+                        margin-top:18px;
+                        padding:22px;
+                        border-radius:14px;
+                        background-color:#ff4d4f;
+                        color:white;
+                        font-size:19px;
+                        font-weight:700;
+                        line-height:1.5;
+                    ">
+                        ✗ Failed to read uploaded CSV.<br>
+                        <span style="font-size:16px; font-weight:400;">{e}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
         st.stop()
 
