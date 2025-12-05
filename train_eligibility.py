@@ -1,26 +1,133 @@
 # ===========================================================
-# TRAINING SCRIPT FOR PROMOTION ELIGIBILITY (LOGISTIC MODEL)
+# TRAINING SCRIPT (CLUSTERING + SCALER + LOGISTIC REGRESSION)
 # ===========================================================
 
 import pandas as pd
 import numpy as np
 import joblib
+import json
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline as SKPipeline
 from imblearn.combine import SMOTETomek
 
 
-# ================================
-# 1. LOAD DATASET
-# ================================
+# ===========================================================
+# 1. LOAD CLEAN DATASET
+# ===========================================================
 df = pd.read_csv("data/Clean/dataset_clustered_dashboard.csv")
 
+print("Dataset Loaded:", df.shape)
 
-# ================================
-# 2. CREATE TARGET LABEL
-# ================================
+
+# ===========================================================
+# 2. FEATURE ENGINEERING FOR INDEXES
+# ===========================================================
+df["Leadership_Index"] = 0.4 * df["Leadership_Score"] + 0.6 * df["Peer_Review_Score"]
+df["Performance_Index"] = (
+    0.5 * df["Performance_Score"] +
+    0.2 * df["Projects_Handled"] +
+    0.3 * df["Peer_Review_Score"]
+)
+df["Potential_Index"] = (
+    0.4 * df["Training_Hours"] +
+    0.4 * df["Peer_Review_Score"] +
+    0.2 * df["Leadership_Score"]
+)
+
+print("Feature Engineering Completed\n")
+
+
+# ===========================================================
+# 3. CLUSTERING FEATURES
+# ===========================================================
+cluster_features = [
+    "Performance_Index",
+    "Leadership_Index",
+    "Potential_Index"
+]
+
+X_cluster = df[cluster_features]
+
+
+# ===========================================================
+# 4. SCALING (STANDARD SCALER)
+# ===========================================================
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X_cluster)
+
+joblib.dump(scaler, "cluster_scaler.pkl")
+print("Scaler Saved → cluster_scaler.pkl")
+
+
+# ===========================================================
+# 5. TRAIN KMEANS CLUSTERING
+# ===========================================================
+kmeans = KMeans(
+    n_clusters=4,
+    random_state=42,
+    n_init="auto"
+)
+
+kmeans.fit(X_scaled)
+
+joblib.dump(kmeans, "cluster_model.pkl")
+print("KMeans Model Saved → cluster_model.pkl\n")
+
+
+# ===========================================================
+# 6. CREATE CLUSTER LABELS FOR TRAIN DATA
+# ===========================================================
+df["Cluster"] = kmeans.predict(X_scaled) + 1
+print("Cluster Assignment Completed")
+print(df["Cluster"].value_counts(), "\n")
+
+
+# ===========================================================
+# 7. CLUSTER METADATA (SAVE TO JSON)
+# ===========================================================
+cluster_meta = {
+    "Characteristics": {
+        "1": "Under Developed With Potential",
+        "2": "At-Risk and Underpowered",
+        "3": "All Around Top Performer",
+        "4": "Consistent Performer or Leader"
+    },
+
+    "Description": {
+        "1": "Talents in this cluster show strong potential...",
+        "2": "This cluster has the lowest scores across all indices...",
+        "3": "This group demonstrates the highest levels of performance...",
+        "4": "Talents in this cluster excel in performance and execution..."
+    },
+
+    "HR_Recommendations": {
+        "1": "Strengthen their acceleration potential...",
+        "2": "Implement targeted capability recovery...",
+        "3": "Fast-track their development...",
+        "4": "Maximize their contribution through specialist paths..."
+    },
+
+    "HR_Programs": {
+        "1": "Performance improvement training, coaching...",
+        "2": "Core competency training, SOP refreshers...",
+        "3": "Leadership bootcamps, strategic rotations...",
+        "4": "Technical certifications, specialist pathways..."
+    }
+}
+
+with open("cluster_metadata.json", "w") as f:
+    json.dump(cluster_meta, f, indent=4)
+
+print("Cluster Metadata Saved → cluster_metadata.json\n")
+
+
+# ===========================================================
+# 8. TARGET LABEL FOR PROMOTION ELIGIBILITY
+# ===========================================================
 df["Promotion_Score"] = (
     df["Performance_Index"] * 0.30 +
     df["Potential_Index"] * 0.25 +
@@ -32,14 +139,14 @@ df["Promotion_Score"] = (
 threshold = df["Promotion_Score"].quantile(0.85)
 df["Eligible_New"] = (df["Promotion_Score"] >= threshold).astype(int)
 
-print("Label creation complete.")
+print("Promotion Label Created")
 print(df["Eligible_New"].value_counts(), "\n")
 
 
-# ================================
-# 3. SELECT FEATURES
-# ================================
-features = [
+# ===========================================================
+# 9. FEATURES FOR LOGISTIC REGRESSION
+# ===========================================================
+logreg_features = [
     "Age",
     "Performance_Index",
     "Leadership_Index",
@@ -51,45 +158,41 @@ features = [
     "Growth_Momentum"
 ]
 
-X = df[features]
+X = df[logreg_features]
 y = df["Eligible_New"]
 
 
-# ================================
-# 4. TRAIN / TEST SPLIT
-# ================================
+# ===========================================================
+# 10. TRAIN TEST SPLIT
+# ===========================================================
 X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
+    X, y,
     test_size=0.3,
     random_state=42,
     stratify=y
 )
 
-print("Train/Test Split Completed")
-print(f"Train size: {len(X_train)} | Test size: {len(X_test)}\n")
+print("Train-Test Split Completed\n")
 
 
-# ================================
-# 5. RESAMPLE FIRST (SMOTE + TOMEK)
-# ================================
-print("Applying SMOTETomek balancing...")
+# ===========================================================
+# 11. BALANCING (SMOTETOMEK)
+# ===========================================================
 smote = SMOTETomek(random_state=42)
 X_res, y_res = smote.fit_resample(X_train, y_train)
 
 print("Resampling Completed")
-print("After resampling:", np.bincount(y_res), "\n")
+print(np.bincount(y_res), "\n")
 
 
-# ================================
-# 6. GRIDSEARCH WITH MODEL ONLY
-# ================================
+# ===========================================================
+# 12. GRIDSEARCH LOGISTIC REGRESSION
+# ===========================================================
 model = LogisticRegression(max_iter=5000, random_state=42)
 
 param_grid = {
     "C": [0.001, 0.01, 0.1, 1, 10, 100],
     "penalty": ["l2"],
-    "class_weight": [None],
     "solver": ["lbfgs", "liblinear"]
 }
 
@@ -103,30 +206,28 @@ scoring = {
 grid_lr = GridSearchCV(
     estimator=model,
     param_grid=param_grid,
-    cv=10,
     scoring=scoring,
     refit="f1",
-    n_jobs=1,     # avoid multiprocessing issues on MacOS + imblearn
+    cv=10,
+    n_jobs=1,
     verbose=2
 )
 
 print("Training Logistic Regression...")
 grid_lr.fit(X_res, y_res)
 
-print("\nTraining COMPLETE.")
+print("Training Completed")
 print("Best Params:", grid_lr.best_params_)
-print("Best F1 Score:", grid_lr.best_score_, "\n")
+print("Best F1:", grid_lr.best_score_, "\n")
 
 
-# ================================
-# 7. SAVE BEST MODEL (PIPELINE FOR INFERENCE)
-# ================================
+# ===========================================================
+# 13. SAVE LOGISTIC PIPELINE
+# ===========================================================
 best_model = grid_lr.best_estimator_
+pipeline = SKPipeline([("model", best_model)])
 
-# Pipeline sederhana (hanya untuk inference)
-final_pipe = SKPipeline([("model", best_model)])
+joblib.dump(pipeline, "logistic_pipeline.pkl")
+print("Logistic Regression Saved → logistic_pipeline.pkl")
 
-joblib.dump(final_pipe, "logistic_pipeline.pkl")
-print("Model saved as logistic_pipeline.pkl")
-
-print("\nTraining script finished successfully!")
+print("\nTRAINING PIPELINE COMPLETED SUCCESSFULLY!")
