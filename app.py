@@ -568,26 +568,71 @@ with tab3:
     elif mode == "Predict employee cluster and characteristics":
         st.markdown("### Predict Employee Cluster and Characteristics")
 
-        # Employee ID optional field
         emp_id_input = st.text_input("Employee ID (optional):", placeholder="e.g. NEW001", key="m_empid")
 
-        # form fields (defaults are None — will show empty UI)
-        age   = st.number_input("Age", min_value=18, max_value=70, value=None, key="m_age")
-        perf  = st.selectbox("Performance Score (1–5)", ["Choose an option", 1,2,3,4,5], index=0, key="m_perf")
-        lead  = st.number_input("Leadership Score", min_value=0.0, max_value=100.0, value=None, key="m_lead")
-        train = st.number_input("Training Hours", min_value=0.0, max_value=500.0, value=None, key="m_train")
-        proj  = st.number_input("Projects Handled", min_value=0.0, max_value=100.0, value=None, key="m_proj")
-        peer  = st.number_input("Peer Review Score", min_value=0.0, max_value=100.0, value=None, key="m_peer")
-        level = st.selectbox("Current Position Level", ["Choose an option","Junior","Mid","Senior","Lead"], index=0, key="m_level")
+        # AGE tetap manual input
+        age = st.number_input("Age", min_value=18, max_value=70, value=None, key="m_age")
 
-        # empty/placeholder view until all required fields (except optional emp id) are provided
+        # PERFORMANCE SCORE
+        perf = st.selectbox(
+            "Performance Score (1–5)",
+            ["Choose an option"] + list(range(1,6)),
+            index=0,
+            key="m_perf"
+        )
+
+        # LEADERSHIP SCORE (0–100 step 10)
+        lead_options = ["Choose an option"] + list(range(0, 101, 10))
+        lead = st.selectbox(
+            "Leadership Score (0–100)",
+            lead_options,
+            index=0,
+            key="m_lead"
+        )
+
+        # TRAINING HOURS (0–200 step 20)
+        train_options = ["Choose an option"] + list(range(0, 201, 20))
+        train = st.selectbox(
+            "Training Hours (0–200)",
+            train_options,
+            index=0,
+            key="m_train"
+        )
+
+        # PROJECTS HANDLED (0–20)
+        proj_options = ["Choose an option"] + list(range(0, 21))
+        proj = st.selectbox(
+            "Projects Handled (0–20)",
+            proj_options,
+            index=0,
+            key="m_proj"
+        )
+
+        # PEER REVIEW SCORE (0–100 step 10)
+        peer_options = ["Choose an option"] + list(range(0, 101, 10))
+        peer = st.selectbox(
+            "Peer Review Score (0–100)",
+            peer_options,
+            index=0,
+            key="m_peer"
+        )
+
+        # POSITION LEVEL
+        level = st.selectbox(
+            "Current Position Level",
+            ["Choose an option","Junior","Mid","Senior","Lead"],
+            index=0,
+            key="m_level"
+        )
+
+        # REQUIRED CHECK
         required_filled = (
             (age is not None) and
             (perf != "Choose an option") and
-            (lead is not None) and
-            (train is not None) and
-            (proj is not None) and
-            (peer is not None) and
+            (lead != "Choose an option") and
+            (train != "Choose an option") and
+            (proj != "Choose an option") and
+            (peer != "Choose an option") and
             (level != "Choose an option")
         )
 
