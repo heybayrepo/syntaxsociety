@@ -65,9 +65,9 @@ st.markdown(page_bg, unsafe_allow_html=True)
 # Helper: feature engineering + clustering
 # ---------------------------
 def apply_feature_engineering_and_clustering(df_in,
-                                             cluster_model_path="cluster_model.pkl",
-                                             cluster_scaler_path="cluster_scaler.pkl",
-                                             cluster_meta_path="cluster_metadata.json",
+                                            cluster_model_path="models/cluster_model.pkl",
+                                            cluster_scaler_path="models/cluster_scaler.pkl",
+                                            cluster_meta_path="models/cluster_metadata.json",
                                              force_recompute=False):
     """
     Input: dataframe with columns:
