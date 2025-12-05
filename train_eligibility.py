@@ -18,7 +18,7 @@ from imblearn.combine import SMOTETomek
 # ===========================================================
 # 1. LOAD CLEAN DATASET
 # ===========================================================
-df = pd.read_csv("data/Clean/dataset_clustered_dashboard.csv")
+df = pd.read_csv("data/Clean/dataset_test_cluster.csv")
 
 print("Dataset Loaded:", df.shape)
 
@@ -129,11 +129,12 @@ print("Cluster Metadata Saved → cluster_metadata.json\n")
 # 8. TARGET LABEL FOR PROMOTION ELIGIBILITY
 # ===========================================================
 df["Promotion_Score"] = (
-    df["Performance_Index"] * 0.30 +
-    df["Potential_Index"] * 0.25 +
-    df["Leadership_Index"] * 0.20 +
-    df["Performance_Consistency"] * 0.15 +
-    df["Growth_Momentum"] * 0.10
+    df['Leadership_Influence'] * 0.425 +
+    df['Performance_Index'] * 0.221 +
+    df['Performance_Consistency'] * 0.137 +
+    df['Growth_Momentum'] * 0.130 +
+    df['Leadership_Index'] * 0.074 +
+    df['Potential_Index'] * 0.013
 )
 
 threshold = df["Promotion_Score"].quantile(0.85)
