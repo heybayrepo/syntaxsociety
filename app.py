@@ -853,11 +853,7 @@ with tab3:
                 "Current_Position_Level": level,
             }
 
-    # -----------------------------
-    # 3) UPLOAD CSV
-    # -----------------------------
-    
-    # -----------------------------
+        # -----------------------------
     # 3) UPLOAD CSV
     # -----------------------------
     elif mode == "Upload employee data in bulk using CSV":
@@ -887,8 +883,8 @@ with tab3:
                     "Training_Hours","Projects_Handled","Peer_Review_Score","Current_Position_Level"
                 }
 
-                # ❌ Missing Columns
                 if not required_cols.issubset(set(new.columns)):
+                    # Big red card (consistent style)
                     st.markdown(
                         """
                         <div style="
@@ -907,60 +903,57 @@ with tab3:
                         """,
                         unsafe_allow_html=True
                     )
-
                 else:
-                    # FE + Clustering on uploaded rows
-                    new_enriched = apply_feature_engineering_and_clustering(new.copy())
+                    # --- SAFE: enrich using combined dataframe so clustering/training won't run on tiny 'new' only ---
+                    existing = st.session_state.get("master_df", pd.DataFrame())
+                    # If master_df is empty, just concat so apply_* sees more samples if available in existing;
+                    # otherwise apply to combined to let function use existing centroids/models.
+                    combined = pd.concat([existing, new], ignore_index=True) if not existing.empty else new.copy()
 
-                    # Append to master DF
-                    st.session_state["master_df"] = pd.concat(
-                        [st.session_state["master_df"], new_enriched], ignore_index=True
-                    )
+                    # Do NOT force recompute (we prefer using saved models if present).
+                    combined_enriched = apply_feature_engineering_and_clustering(combined, force_recompute=False)
+
+                    # Extract only the newly uploaded rows (they are at the tail).
+                    new_enriched = combined_enriched.iloc[len(combined_enriched) - len(new):].reset_index(drop=True)
+
+                    # Append enriched new rows to master_df
+                    if existing.empty:
+                        st.session_state["master_df"] = new_enriched.copy()
+                    else:
+                        st.session_state["master_df"] = pd.concat([existing, new_enriched], ignore_index=True)
+
+                    # Refresh local ref
                     df_ref = st.session_state["master_df"]
 
-                    # ------------------------------
-                    # SUCCESS CARD — BIG & BEAUTIFUL
-                    # ------------------------------
-                    wrapper_style = (
-                        "width:calc(100% - 144px);"
-                        "margin-left:72px;"
-                        "margin-right:72px;"
-                        "box-sizing:border-box;"
-                    )
-
+                    # === BIG SUCCESS GREEN CARD (stand-out, clickable link) ===
                     st.markdown(
                         f"""
-                        <div style="{wrapper_style}">
-                            <div style="
-                                background: linear-gradient(90deg, #00c46a, #00a859);
-                                padding:26px 30px;
-                                border-radius:18px;
-                                color:white;
-                                font-family: Inter, sans-serif;
-                                box-shadow:0 12px 28px rgba(0,0,0,0.22);
-                                display:flex;
-                                gap:18px;
-                                align-items:flex-start;
-                            ">
-
-                                <div style="font-size:42px; line-height:1; font-weight:900;">✓</div>
-
+                        <div style="
+                            margin-top:18px;
+                            padding:22px;
+                            border-radius:14px;
+                            background: linear-gradient(180deg,#0fb35f,#00bf63);
+                            color:white;
+                            font-size:20px;
+                            font-weight:700;
+                            line-height:1.4;
+                            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+                        ">
+                            <div style="display:flex;align-items:center;gap:18px;">
+                                <div style="font-size:34px; line-height:1; font-weight:900;">✓</div>
                                 <div style="flex:1;">
-                                    <div style="font-size:24px; font-weight:800; margin-bottom:6px;">
+                                    <div style="font-size:22px; font-weight:800; margin-bottom:4px;">
                                         Successfully uploaded <strong>{len(new)}</strong> rows.
                                     </div>
-                                    <div style="font-size:18px; opacity:0.95; line-height:1.45;">
-                                        Go to <span style="font-weight:900;">“Select Employee ID”</span> to view and analyze the new entries.
+                                    <div style="font-size:15px; opacity:0.95;">
+                                        Go to <span style="font-weight:900;">"Select Employee ID"</span> to view and analyze the new entries.
                                     </div>
                                 </div>
-
                                 <div style="flex-shrink:0;">
-                                    <a href="#select-employee-id"
-                                    style="color:white; text-decoration:underline; font-weight:700; font-size:15px;">
-                                        Jump to selector
+                                    <a href="#select-employee-id" style="color:white; text-decoration:underline; font-weight:700; font-size:15px;">
+                                        Jump to selector →
                                     </a>
                                 </div>
-
                             </div>
                         </div>
                         """,
@@ -968,7 +961,7 @@ with tab3:
                     )
 
             except Exception as e:
-                # ❌ READ FAILURE CARD
+                # Big red card with actual error message
                 st.markdown(
                     f"""
                     <div style="
@@ -982,7 +975,7 @@ with tab3:
                         line-height:1.5;
                     ">
                         ✗ Failed to read uploaded CSV.<br>
-                        <span style="font-size:16px; font-weight:400;">{e}</span>
+                        <div style="font-size:14px; font-weight:400; margin-top:8px; opacity:0.95;">{str(e)}</div>
                     </div>
                     """,
                     unsafe_allow_html=True
