@@ -4,7 +4,7 @@
 
 ---
 
-<img width="1497" height="841" alt="The Promotion Paradox" src="https://github.com/user-attachments/assets/f61c6260-a496-4829-ac3d-da4030915849" />
+<img width="1774" height="997" alt="The Promotion Paradox" src="https://github.com/user-attachments/assets/7501b515-10a6-47d3-a366-8e86519a2554" />
 
 ## 📖 Story Behind the Project  
 
