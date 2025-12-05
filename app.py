@@ -64,171 +64,157 @@ st.markdown(page_bg, unsafe_allow_html=True)
 # ---------------------------
 # Helper: feature engineering + clustering
 # ---------------------------
-def apply_feature_engineering_and_clustering(df_in,
-                                            cluster_model_path="models/cluster_model.pkl",
-                                            cluster_scaler_path="models/cluster_scaler.pkl",
-                                            cluster_meta_path="models/cluster_metadata.json",
-                                             force_recompute=False):
-    """
-    Input: dataframe with columns:
-        Employee_ID, Age, Performance_Score, Leadership_Score, Training_Hours,
-        Projects_Handled, Peer_Review_Score, Current_Position_Level, Salary (opt)
-    Output: same dataframe with added calculated columns:
-        Leadership_Index, Performance_Index, Potential_Index,
-        Projects_Handled_scaled, Training_Hours_scaled,
-        Performance_Consistency, Growth_Momentum, Cluster (+ metadata)
-    Behavior:
-        - If pre-trained scaler + kmeans exist and force_recompute==False -> load and use them
-        - Else fit scaler + kmeans on provided df and save them
-    """
+def apply_feature_engineering_and_clustering(
+    df_in,
+    cluster_model_path="models/cluster_model.pkl",
+    cluster_scaler_path="models/cluster_scaler.pkl",
+    cluster_meta_path="models/cluster_metadata.json",
+    force_recompute=False
+):
     df = df_in.copy()
 
-    # ensure required raw columns exist
     required_raw = {
         "Performance_Score", "Leadership_Score", "Training_Hours",
         "Projects_Handled", "Peer_Review_Score"
     }
-    if not required_raw.issubset(set(df.columns)):
-        # we cannot proceed if core inputs missing
+
+    if not required_raw.issubset(df.columns):
         return df
 
-    # safe numeric conversion
-    for c in ["Performance_Score","Leadership_Score","Training_Hours","Projects_Handled","Peer_Review_Score"]:
+    # ==== SAFE TYPE CASTING ====
+    for c in required_raw:
         df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0.0)
 
-    # INDEX calculations
+    # ==== INDEX CALCULATIONS ====
     df["Leadership_Index"] = 0.4 * df["Leadership_Score"] + 0.6 * df["Peer_Review_Score"]
     df["Performance_Index"] = (
-        0.5 * df["Performance_Score"] + 0.2 * df["Projects_Handled"] + 0.3 * df["Peer_Review_Score"]
+        0.5 * df["Performance_Score"]
+        + 0.2 * df["Projects_Handled"]
+        + 0.3 * df["Peer_Review_Score"]
     )
     df["Potential_Index"] = (
-        0.4 * df["Training_Hours"] + 0.4 * df["Peer_Review_Score"] + 0.2 * df["Leadership_Score"]
+        0.4 * df["Training_Hours"]
+        + 0.4 * df["Peer_Review_Score"]
+        + 0.2 * df["Leadership_Score"]
     )
 
-    # Scale Projects_Handled and Training_Hours for the two derived metrics
+    # ==== SCALING PROJECTS & TRAINING ====
     scaler_cols = ["Projects_Handled", "Training_Hours"]
-    scaler = None
 
-    if (os.path.exists(cluster_scaler_path) and not force_recompute):
+    scaler = None
+    if os.path.exists(cluster_scaler_path) and not force_recompute:
         try:
             scaler = joblib.load(cluster_scaler_path)
-        except Exception:
+        except:
             scaler = None
 
     if scaler is None:
         scaler = StandardScaler()
-        scaler.fit(df[scaler_cols].values)
-        try:
-            joblib.dump(scaler, cluster_scaler_path)
-        except Exception:
-            pass
+        scaler.fit(df[scaler_cols])
+        try: joblib.dump(scaler, cluster_scaler_path)
+        except: pass
 
-    scaled_vals = scaler.transform(df[scaler_cols].values)
-    df["Projects_Handled_scaled"] = scaled_vals[:, 0]
-    df["Training_Hours_scaled"] = scaled_vals[:, 1]
+    scaled = scaler.transform(df[scaler_cols])
+    df["Projects_Handled_scaled"] = scaled[:,0]
+    df["Training_Hours_scaled"] = scaled[:,1]
 
-    # Derived metrics per your formulas
+    # ==== DERIVED METRICS ====
     df["Performance_Consistency"] = df["Performance_Score"] * df["Projects_Handled_scaled"]
-    df["Growth_Momentum"] = df["Projects_Handled_scaled"] / (df["Training_Hours_scaled"] + 1.0)
+    df["Growth_Momentum"] = df["Projects_Handled_scaled"] / (df["Training_Hours_scaled"] + 1)
 
-    # CLUSTERING: use Performance_Index, Leadership_Index, Potential_Index
-    cluster_features = ["Performance_Index","Leadership_Index","Potential_Index"]
-    X_cluster = df[cluster_features].values
+    # ==== CLUSTERING FEATURES ====
+    cluster_feats = ["Performance_Index","Leadership_Index","Potential_Index"]
+    X = df[cluster_feats].values
 
-    # scaler for clustering (standardize the 3 indices)
-    cluster_scaler_for_3 = None
-    cluster_scaler_3_path = cluster_scaler_path.replace(".pkl","_3.pkl")
-    if (os.path.exists(cluster_scaler_3_path) and not force_recompute):
+    scaler3 = None
+    scaler3_path = cluster_scaler_path.replace(".pkl","_3.pkl")
+
+    if os.path.exists(scaler3_path) and not force_recompute:
         try:
-            cluster_scaler_for_3 = joblib.load(cluster_scaler_3_path)
-        except Exception:
-            cluster_scaler_for_3 = None
+            scaler3 = joblib.load(scaler3_path)
+        except:
+            scaler3 = None
 
-    if cluster_scaler_for_3 is None:
-        cluster_scaler_for_3 = StandardScaler()
-        cluster_scaler_for_3.fit(X_cluster)
-        try:
-            joblib.dump(cluster_scaler_for_3, cluster_scaler_3_path)
-        except Exception:
-            pass
+    if scaler3 is None:
+        scaler3 = StandardScaler()
+        scaler3.fit(X)
+        try: joblib.dump(scaler3, scaler3_path)
+        except: pass
 
-    X_cluster_scaled = cluster_scaler_for_3.transform(X_cluster)
+    X_scaled = scaler3.transform(X)
 
-    # load or fit kmeans
+    # ==== KMEANS ====
     kmeans = None
-    if (os.path.exists(cluster_model_path) and not force_recompute):
+    if os.path.exists(cluster_model_path) and not force_recompute:
         try:
             kmeans = joblib.load(cluster_model_path)
-        except Exception:
+        except:
             kmeans = None
 
     if kmeans is None:
         kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
-        kmeans.fit(X_cluster_scaled)
-        try:
-            joblib.dump(kmeans, cluster_model_path)
-        except Exception:
-            pass
+        kmeans.fit(X_scaled)
+        try: joblib.dump(kmeans, cluster_model_path)
+        except: pass
 
-    # assign cluster (1..4)
-    labels = kmeans.predict(X_cluster_scaled)
-    df["Cluster"] = labels + 1
+    df["Cluster"] = kmeans.predict(X_scaled) + 1
 
-    # try to load cluster metadata json, else create default mapping
-    cluster_meta = None
+    # ============================================================
+    # 🔥 FIX: ALWAYS LOAD FULL METADATA, EVEN IF JSON NOT FOUND
+    # ============================================================
+
+    default_meta = {
+        "Characteristics": {
+            "1": "Under Developed With Potential",
+            "2": "At-Risk and Underpowered",
+            "3": "All Around Top Performer",
+            "4": "Consistent Performer or Leader"
+        },
+        "Description": {
+            "1": "Talents in this cluster show strong potential, but their leadership and performance are still developing...",
+            "2": "This cluster has the lowest scores across all indices and requires foundational recovery...",
+            "3": "This group demonstrates the highest levels of performance, leadership, and potential...",
+            "4": "Talents in this cluster excel in execution and reliability; best suited for specialist tracks..."
+        },
+        "HR_Recommendations": {
+            "1": "Provide structured coaching, targeted skill-building, and guided learning exposure.",
+            "2": "Rebuild core competencies, strengthen fundamentals, and increase supervision.",
+            "3": "Accelerate through leadership programs, strategic rotations, and stretch roles.",
+            "4": "Maximize contribution via specialist training, certifications, and expert pathways."
+        },
+        "HR_Programs": {
+            "1": "Performance improvement training, coaching, task ownership.",
+            "2": "Core competency recovery, SOP refreshers, regular check-ins.",
+            "3": "Leadership bootcamps, rotational assignments, mentorship programs.",
+            "4": "Technical certifications, specialist mastery tracks, recognition incentives."
+        }
+    }
+
+    # TRY LOAD JSON
     if os.path.exists(cluster_meta_path):
         try:
-            with open(cluster_meta_path, "r") as f:
-                cluster_meta = json.load(f)
-        except Exception:
-            cluster_meta = None
-
-    if cluster_meta is None:
-        # default metadata (same semantics you provided earlier)
-        cluster_meta = {
-            "Characteristics": {
-                "1": "Under Developed With Potential",
-                "2": "At-Risk and Underpowered",
-                "3": "All Around Top Performer",
-                "4": "Consistent Performer or Leader"
-            },
-            "Description": {
-                "1": "Talents in this cluster show strong potential...",
-                "2": "This cluster has the lowest scores across all indices...",
-                "3": "This group demonstrates the highest levels of performance...",
-                "4": "Talents in this cluster excel in performance and execution..."
-            },
-            "HR_Recommendations": {
-                "1": "Strengthen their acceleration potential...",
-                "2": "Implement targeted capability recovery...",
-                "3": "Fast-track their development...",
-                "4": "Maximize their contribution through specialist paths..."
-            },
-            "HR_Programs": {
-                "1": "Performance improvement training, coaching...",
-                "2": "Core competency training, SOP refreshers...",
-                "3": "Leadership bootcamps, strategic rotations...",
-                "4": "Technical certifications, specialist pathways..."
-            }
-        }
-        # attempt to persist so later runs use it
+            with open(cluster_meta_path) as f:
+                json_meta = json.load(f)
+            # merge default with JSON to prevent missing keys
+            for section in default_meta:
+                json_meta.setdefault(section, default_meta[section])
+            cluster_meta = json_meta
+        except:
+            cluster_meta = default_meta
+    else:
+        cluster_meta = default_meta
         try:
-            with open(cluster_meta_path, "w") as f:
-                json.dump(cluster_meta, f, indent=4)
-        except Exception:
+            with open(cluster_meta_path,"w") as f:
+                json.dump(default_meta,f,indent=4)
+        except:
             pass
 
-    # map metadata to df
-    def map_meta(row, meta_dict, field):
-        key = str(int(row["Cluster"]))
-        return meta_dict.get(field, {}).get(key, "—")
+    # ==== APPLY METADATA ====
+    df["Characteristics"]       = df["Cluster"].astype(str).map(cluster_meta["Characteristics"])
+    df["Description"]           = df["Cluster"].astype(str).map(cluster_meta["Description"])
+    df["HR_Recommendations"]    = df["Cluster"].astype(str).map(cluster_meta["HR_Recommendations"])
+    df["HR_Programs"]           = df["Cluster"].astype(str).map(cluster_meta["HR_Programs"])
 
-    df["Characteristics"] = df.apply(lambda r: map_meta(r, cluster_meta, "Characteristics"), axis=1)
-    df["Description"] = df.apply(lambda r: map_meta(r, cluster_meta, "Description"), axis=1)
-    df["HR_Recommendations"] = df.apply(lambda r: map_meta(r, cluster_meta, "HR_Recommendations"), axis=1)
-    df["HR_Programs"] = df.apply(lambda r: map_meta(r, cluster_meta, "HR_Programs"), axis=1)
-
-    # done
     return df
 
 # ---------------------------
@@ -481,9 +467,9 @@ with tab1:
         s = pd.to_numeric(df_for_vis.loc[df_for_vis["Cluster"] == 2, salary_col], errors="coerce")
         total_salary = s.sum(skipna=True)
         try:
-            formatted_salary = "Rp " + "{:,.0f}".format(total_salary).replace(",", ".")
+            formatted_salary = "Rp" + "{:,.0f}".format(total_salary).replace(",", ".")
         except:
-            formatted_salary = "Rp " + str(total_salary)
+            formatted_salary = "Rp" + str(total_salary)
 
         html_card = (
             "<div style='width:100%; border:3px solid #2e307d; border-radius:12px;"
@@ -502,7 +488,7 @@ with tab1:
             "</div>"
 
             "<div style='font-size:13px; margin-top:10px; color:#cfcfcf;'>"
-            "This represents the estimated monthly salary load associated with low-performing talent — "
+            "This represents the estimated monthly salary load associated with low-performing talent, "
             "a direct indicator of potential productivity loss from a business perspective."
             "</div>"
 
@@ -517,6 +503,76 @@ with tab1:
 # ======================================================================
 with tab2:
 
+    # ===========================================================
+    # 🌱 Promotion-Ready Talent — compact + scrollable table
+    # ===========================================================
+    st.markdown("## 🌱 Promotion-Ready")
+
+    # attempt load model (silence warning handled below)
+    try:
+        lr_model = joblib.load("models/logistic_pipeline.pkl")
+    except Exception:
+        lr_model = None
+
+    if lr_model is None:
+        st.info("Promotion model tidak ditemukan. Letakkan `logistic_pipeline.pkl` di folder /models untuk mengaktifkan.")
+    else:
+        df_temp = st.session_state.get("master_df", pd.DataFrame()).copy()
+        if df_temp.empty:
+            st.info("Dataset kosong — tidak ada kandidat untuk dianalisis.")
+        else:
+            # pastikan semua feature ada — fallback numeric 0 agar model tidak crash
+            features = [
+                "Age","Performance_Index","Leadership_Index","Potential_Index",
+                "Training_Hours","Peer_Review_Score","Projects_Handled",
+                "Performance_Consistency","Growth_Momentum"
+            ]
+            for c in features:
+                if c not in df_temp.columns:
+                    df_temp[c] = 0.0
+
+            # compute promotion score (sama formula di Tab 3)
+            df_temp["Promotion_Score"] = (
+                0.30 * df_temp["Performance_Index"] +
+                0.25 * df_temp["Potential_Index"] +
+                0.20 * df_temp["Leadership_Index"] +
+                0.15 * df_temp["Performance_Consistency"] +
+                0.10 * df_temp["Growth_Momentum"]
+            )
+
+            # Predict eligibility (if model fails, fallback to Promotion_Score threshold logic)
+            try:
+                df_temp["Eligible_Pred"] = lr_model.predict(df_temp[features])
+            except Exception:
+                # fallback: mark top percentile as eligible (best-effort)
+                thr = df_temp["Promotion_Score"].quantile(0.90)
+                df_temp["Eligible_Pred"] = (df_temp["Promotion_Score"] >= thr).astype(int)
+                st.warning("Model prediksi gagal digunakan; fallback ke threshold Promotion_Score (Q90).")
+
+            # filter eligible
+            eligible_df = df_temp[df_temp["Eligible_Pred"] == 1].copy()
+
+            if eligible_df.empty:
+                st.info("Tidak ada kandidat eligible saat ini menurut model/fallback.")
+            else:
+                # sort by Leadership_Index (desc) as requested and keep 10 rows
+                top_eligible = eligible_df.sort_values("Leadership_Index", ascending=False).head(10)
+
+                # columns to display (rename to friendly names if mau)
+                display_cols = ["Employee_ID", "Age", "Current_Position_Level", "Leadership_Index", "Performance_Index"]
+                # ensure cols exist
+                for col in display_cols:
+                    if col not in top_eligible.columns:
+                        top_eligible[col] = "—"
+
+                st.markdown("**These talents are eligible for promotion**")
+                st.dataframe(
+                    top_eligible[display_cols].reset_index(drop=True),
+                    hide_index=True,
+                    use_container_width=True,
+                    height=360  # fixed height -> will show scrollbar if rows exceed visible area
+                )
+
     # ⭐ Top Talent
     st.markdown("## ⭐ Top Talent")
 
@@ -530,82 +586,92 @@ with tab2:
         )
 
     with colB:
-        position_options = ['All Levels'] + sorted(st.session_state["master_df"]['Current_Position_Level'].dropna().unique().tolist()) if not st.session_state["master_df"].empty else ['All Levels']
+        position_options = (
+            ['All Levels'] +
+            sorted(st.session_state["master_df"]['Current_Position_Level'].dropna().unique().tolist())
+            if not st.session_state["master_df"].empty else ['All Levels']
+        )
         selected_level = st.selectbox(
             'Filter by Position Level:',
             position_options,
             key="position_filter"
         )
 
-    df_filtered = st.session_state["master_df"] if selected_level == 'All Levels' else st.session_state["master_df"][st.session_state["master_df"]['Current_Position_Level'] == selected_level]
+    df_filtered = (
+        st.session_state["master_df"]
+        if selected_level == 'All Levels'
+        else st.session_state["master_df"][st.session_state["master_df"]['Current_Position_Level'] == selected_level]
+    )
 
+    # ================================
+    # BEST PERFORMING
+    # ================================
     if category == 'Best Performing':
-        ranked = df_filtered.sort_values('Performance_Index', ascending=False).head(10) if 'Performance_Index' in df_filtered.columns else pd.DataFrame()
-        st.dataframe(
-            ranked[
-                ['Employee_ID', 'Current_Position_Level', 'Performance_Index',
-                 'Performance_Consistency', 'Cluster']
-            ] if not ranked.empty else ranked,
-            hide_index=True,
-            use_container_width=True
+
+        ranked = (
+            df_filtered.sort_values('Performance_Index', ascending=False).head(10)
+            if 'Performance_Index' in df_filtered.columns else pd.DataFrame()
         )
 
+        cols = [
+            'Employee_ID',
+            'Current_Position_Level',
+            'Performance_Index',
+            'Performance_Score',
+            'Cluster'
+        ]
+
+        ranked = ranked[cols] if not ranked.empty else ranked
+
+        st.dataframe(ranked, use_container_width=True, hide_index=True)
+
+
+    # ================================
+    # BEST LEADERSHIP
+    # ================================
     elif category == 'Best Leadership':
-        ranked = df_filtered.sort_values('Leadership_Index', ascending=False).head(10) if 'Leadership_Index' in df_filtered.columns else pd.DataFrame()
-        st.dataframe(
-            ranked[
-                ['Employee_ID', 'Current_Position_Level', 'Leadership_Index',
-                 'Leadership_Influence', 'Peer_Review_Score']
-            ] if not ranked.empty else ranked,
-            hide_index=True,
-            use_container_width=True
+
+        ranked = (
+            df_filtered.sort_values('Leadership_Index', ascending=False).head(10)
+            if 'Leadership_Index' in df_filtered.columns else pd.DataFrame()
         )
 
-    elif category == 'Best Potential':
-        ranked = df_filtered.sort_values('Potential_Index', ascending=False).head(10) if 'Potential_Index' in df_filtered.columns else pd.DataFrame()
-        st.dataframe(
-            ranked[
-                ['Employee_ID', 'Current_Position_Level', 'Potential_Index',
-                 'Growth_Momentum', 'Training_Hours']
-            ] if not ranked.empty else ranked,
-            hide_index=True,
-            use_container_width=True
+        cols = [
+            'Employee_ID',
+            'Current_Position_Level',
+            'Leadership_Index',
+            'Leadership_Score',
+            'Cluster'
+        ]
+
+        ranked = ranked[cols] if not ranked.empty else ranked
+
+        st.dataframe(ranked, use_container_width=True, hide_index=True)
+
+
+    # ================================
+    # BEST POTENTIAL (tetap seperti sebelumnya)
+    # ================================
+    else:
+        ranked = (
+            df_filtered.sort_values('Potential_Index', ascending=False).head(10)
+            if 'Potential_Index' in df_filtered.columns else pd.DataFrame()
         )
+        cols = [
+            'Employee_ID',
+            'Current_Position_Level',
+            'Potential_Index',
+            'Growth_Momentum',
+            'Training_Hours'
+        ]
+        ranked = ranked[cols] if not ranked.empty else ranked
 
-    # ⚖️ Average Indexes
-    st.markdown("## ⚖️ Average Indexes")
+        st.dataframe(ranked, use_container_width=True, hide_index=True)
 
-    col1, col2, col3 = st.columns(3)
 
-    def metric_card(title, value):
-        return f"""
-        <div style="
-            border: 3px solid #2e307d;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background-color: #2e307d;
-        ">
-            <h3 style="margin:0; padding:0; color:white; font-size:22px;">
-                {title}
-            </h3>
-            <div style="margin-top:10px;">
-                <span style="font-size:26px; font-weight:300; color:white;">
-                    {value}
-                </span>
-            </div>
-        </div>
-        """
-
-    perf_mean = st.session_state["master_df"]["Performance_Index"].mean() if 'Performance_Index' in st.session_state["master_df"].columns else 0.0
-    lead_mean = st.session_state["master_df"]["Leadership_Index"].mean() if 'Leadership_Index' in st.session_state["master_df"].columns else 0.0
-    pot_mean  = st.session_state["master_df"]["Potential_Index"].mean() if 'Potential_Index' in st.session_state["master_df"].columns else 0.0
-
-    col1.markdown(metric_card('Performance Idx', f'{perf_mean:.2f}'), unsafe_allow_html=True)
-    col2.markdown(metric_card('Leadership Idx', f'{lead_mean:.2f}'), unsafe_allow_html=True)
-    col3.markdown(metric_card('Potential Idx', f'{pot_mean:.2f}'), unsafe_allow_html=True)
-
-    # ⚠️ High Risk Talent
+    # ===========================================================
+    # ⚠️ HIGH RISK TALENT
+    # ===========================================================
     st.markdown("## ⚠️ High Risk Talent")
 
     colR1, colR2 = st.columns(2)
@@ -618,53 +684,98 @@ with tab2:
         )
 
     with colR2:
-        position_options_risk = ['All Levels'] + sorted(st.session_state["master_df"]['Current_Position_Level'].dropna().unique().tolist()) if not st.session_state["master_df"].empty else ['All Levels']
+        position_options_risk = position_options
         selected_level_risk = st.selectbox(
             'Filter by Position Level:',
             position_options_risk,
             key="risk_position_filter"
         )
 
-    df_risk = st.session_state["master_df"] if selected_level_risk == 'All Levels' else st.session_state["master_df"][st.session_state["master_df"]['Current_Position_Level'] == selected_level_risk]
+    df_risk = (
+        st.session_state["master_df"]
+        if selected_level_risk == 'All Levels'
+        else st.session_state["master_df"][st.session_state["master_df"]['Current_Position_Level'] == selected_level_risk]
+    )
 
+
+    # ================================
+    # LOW PERFORMING (mirror Best Performing)
+    # ================================
     if risk_category == 'Low Performing':
-        ranked = df_risk.sort_values('Performance_Index', ascending=True).head(10) if 'Performance_Index' in df_risk.columns else pd.DataFrame()
-        st.dataframe(
-            ranked[
-                ['Employee_ID','Current_Position_Level','Performance_Index',
-                 'Performance_Consistency','Cluster']
-            ] if not ranked.empty else ranked,
-            hide_index=True, use_container_width=True
+
+        ranked = (
+            df_risk.sort_values('Performance_Index', ascending=True).head(10)
+            if 'Performance_Index' in df_risk.columns else pd.DataFrame()
         )
 
+        cols = [
+            'Employee_ID',
+            'Current_Position_Level',
+            'Performance_Index',
+            'Performance_Score',
+            'Cluster'
+        ]
+
+        ranked = ranked[cols] if not ranked.empty else ranked
+
+        st.dataframe(ranked, use_container_width=True, hide_index=True)
+
+
+    # ================================
+    # LOW LEADERSHIP (mirror Best Leadership)
+    # ================================
     elif risk_category == 'Low Leadership':
-        ranked = df_risk.sort_values('Leadership_Index', ascending=True).head(10) if 'Leadership_Index' in df_risk.columns else pd.DataFrame()
-        st.dataframe(
-            ranked[
-                ['Employee_ID','Current_Position_Level','Leadership_Index',
-                 'Leadership_Influence','Peer_Review_Score']
-            ] if not ranked.empty else ranked,
-            hide_index=True, use_container_width=True
+
+        ranked = (
+            df_risk.sort_values('Leadership_Index', ascending=True).head(10)
+            if 'Leadership_Index' in df_risk.columns else pd.DataFrame()
         )
 
+        cols = [
+            'Employee_ID',
+            'Current_Position_Level',
+            'Leadership_Index',
+            'Leadership_Score',
+            'Cluster'
+        ]
+
+        ranked = ranked[cols] if not ranked.empty else ranked
+
+        st.dataframe(ranked, use_container_width=True, hide_index=True)
+
+
+    # ================================
+    # LOW POTENTIAL (tetap)
+    # ================================
     else:
-        ranked = df_risk.sort_values('Potential_Index', ascending=True).head(10) if 'Potential_Index' in df_risk.columns else pd.DataFrame()
-        st.dataframe(
-            ranked[
-                ['Employee_ID','Current_Position_Level','Potential_Index',
-                 'Growth_Momentum','Training_Hours']
-            ] if not ranked.empty else ranked,
-            hide_index=True, use_container_width=True
+        ranked = (
+            df_risk.sort_values('Potential_Index', ascending=True).head(10)
+            if 'Potential_Index' in df_risk.columns else pd.DataFrame()
         )
 
+        cols = [
+            'Employee_ID',
+            'Current_Position_Level',
+            'Potential_Index',
+            'Growth_Momentum',
+            'Training_Hours'
+        ]
 
-# ======================================================================
-# TAB 3 — TALENT PREDICTOR (ASLI)
-# ======================================================================
+        ranked = ranked[cols] if not ranked.empty else ranked
+
+        st.dataframe(ranked, use_container_width=True, hide_index=True)
+
+
+# ===== TAB 3 — PART 1/3 =====
+# (Paste this where your original `with tab3:` block should start)
+
 with tab3:
 
-    df_ref = st.session_state["master_df"]
+    df_ref = st.session_state.get("master_df", pd.DataFrame())
 
+    # ===========================================================
+    # CARD BUILDERS (no design changes)
+    # ===========================================================
     def small_card(title, value, color="white", bg="#2e307d"):
         return f"""
         <div style='border:3px solid #2e307d;border-radius:12px;
@@ -675,48 +786,53 @@ with tab3:
         """
 
     def build_description_card(text):
+        # ensure long text wraps properly
+        safe_text = str(text) if text is not None else "—"
         return f"""
         <div style='border:3px solid #2e307d;border-radius:12px;
                     padding:20px;margin-top:20px;background-color:#2e307d;'>
             <div style='font-size:22px;font-weight:700;margin-bottom:12px;color:white'>Description</div>
-            <div style='font-size:18px;color:#ddd'>{text}</div>
+            <div style='font-size:18px;color:#ddd; white-space:normal; word-wrap:break-word;'>{safe_text}</div>
         </div>
         """
 
     def long_card(title, content):
+        safe_content = str(content) if content is not None else "—"
         return f"""
         <div style='border:3px solid #2e307d;border-radius:12px;
                     padding:20px;margin-top:20px;background-color:#00bf63;'>
             <div style='font-size:22px;font-weight:700;color:white;margin-bottom:12px'>{title}</div>
-            <div style='font-size:18px;color:white'>{content}</div>
+            <div style='font-size:18px;color:white; white-space:normal; word-wrap:break-word;'>{safe_content}</div>
         </div>
         """
 
     st.markdown("## 🔎 Talent Predictor")
     st.markdown("### Select Talent Input Method")
 
-    # --- build cluster_map with int keys (robust)
+    # ===========================================================
+    # METADATA MAP (build from master_df if present)
+    # ===========================================================
+    cluster_map = {}
     if {"Cluster","Characteristics","Description","HR_Recommendations","HR_Programs"}.issubset(df_ref.columns):
-        raw_map = (
+        tmp = (
             df_ref[["Cluster","Characteristics","Description","HR_Recommendations","HR_Programs"]]
             .drop_duplicates("Cluster")
             .set_index("Cluster")
             .to_dict("index")
         )
-        # ensure keys are ints
-        cluster_map = {}
-        for k, v in raw_map.items():
+        for k,v in tmp.items():
             try:
-                ik = int(k)
+                cluster_map[int(k)] = v
             except Exception:
+                # try float->int
                 try:
-                    ik = int(float(k))
+                    cluster_map[int(float(k))] = v
                 except Exception:
                     continue
-            cluster_map[ik] = v
-    else:
-        cluster_map = {}
 
+    # ===========================================================
+    # SELECT INPUT METHOD
+    # ===========================================================
     mode = st.radio(
         "",
         [
@@ -727,140 +843,91 @@ with tab3:
         horizontal=True
     )
 
-    emp = None
+    # default placeholders
+    emp = {}
     is_empty = False
 
-    # -----------------------------
+    # ===========================================================
     # 1) SELECT EMPLOYEE ID
-    # -----------------------------
+    # ===========================================================
     if mode == "Select employee ID":
         st.markdown("#### Select Current Employee")
+        col1, col2 = st.columns(2)
 
-        colA, colB = st.columns(2)
-        with colA:
-            ids = list(df_ref["Employee_ID"].dropna().astype(str).unique()) if not df_ref.empty else []
-            dropdown_vals = ["None"] + ids
-            emp_dropdown = st.selectbox("Select Employee ID:", dropdown_vals, key="tp_dropdown")
+        with col1:
+            ids = df_ref["Employee_ID"].astype(str).unique().tolist() if not df_ref.empty else []
+            emp_id_sel = st.selectbox("Select Employee ID:", ["None"] + ids, key="tp_sel")
 
-        with colB:
-            typed_id = st.text_input("Or type Employee ID:", placeholder="e.g. EMP0057", key="tp_typed_entry")
+        with col2:
+            typed = st.text_input("Or type Employee ID:", key="tp_typed")
 
-        if typed_id.strip() and typed_id.strip() in df_ref.get("Employee_ID", pd.Series(dtype=str)).astype(str).values:
-            emp_id = typed_id.strip()
-            try:
-                st.session_state["tp_dropdown"] = "None"
-            except Exception:
-                pass
-        else:
-            emp_id = emp_dropdown
+        emp_id = typed.strip() if typed.strip() and (typed.strip() in ids) else emp_id_sel
 
-        if emp_id == "None" or emp_id is None:
+        if emp_id == "None" or emp_id not in ids:
             is_empty = True
             emp = {}
         else:
-            row = df_ref[df_ref["Employee_ID"].astype(str) == str(emp_id)]
-            if len(row) == 0:
+            # safe extraction (use iloc[0] if exists)
+            row = df_ref[df_ref["Employee_ID"].astype(str) == emp_id]
+            if row.empty:
                 is_empty = True
                 emp = {}
             else:
                 emp = row.iloc[0].to_dict()
 
-    # -----------------------------
-    # 2) PREDICT EMPLOYEE (MANUAL FORM)
-    # -----------------------------
+    # ===========================================================
+    # 2) MANUAL INPUT FORM
+    # ===========================================================
     elif mode == "Predict employee cluster and characteristics":
         st.markdown("### Predict Employee Cluster and Characteristics")
 
-        emp_id_input = st.text_input("Employee ID (optional):", placeholder="e.g. NEW001", key="m_empid")
+        emp_id_input = st.text_input("Employee ID (optional):")
 
-        age_raw = st.text_input("Age", placeholder="Enter age (18–70)", key="m_age")
-        try:
-            age = int(age_raw) if age_raw.strip() else None
-            if age is not None and not (18 <= age <= 70):
-                age = None
-        except:
-            age = None
+        def to_int_or_none(v):
+            try:
+                if v is None:
+                    return None
+                v2 = str(v).strip()
+                if v2 == "" or v2.lower() == "choose":
+                    return None
+                return int(v2)
+            except Exception:
+                return None
 
-        perf = st.selectbox(
-            "Performance Score (1–5)",
-            ["Choose an option"] + list(range(1,6)),
-            index=0,
-            key="m_perf"
-        )
+        age = to_int_or_none(st.text_input("Age", placeholder="18-70"))
+        perf = to_int_or_none(st.selectbox("Performance Score (1–5)", ["Choose"] + list(range(1,6))))
+        lead = to_int_or_none(st.selectbox("Leadership Score (0–100)", ["Choose"] + list(range(0,101,10))))
+        train = to_int_or_none(st.selectbox("Training Hours (0–200)", ["Choose"] + list(range(0,201,20))))
+        proj = to_int_or_none(st.selectbox("Projects Handled (0–20)", ["Choose"] + list(range(0,21))))
+        peer = to_int_or_none(st.selectbox("Peer Review Score (0–100)", ["Choose"] + list(range(0,101,10))))
+        level = st.selectbox("Current Position Level", ["Choose","Junior","Mid","Senior","Lead"])
 
-        lead_options = ["Choose an option"] + list(range(0, 101, 10))
-        lead = st.selectbox(
-            "Leadership Score (0–100)",
-            lead_options,
-            index=0,
-            key="m_lead"
-        )
+        required = (age is not None and perf is not None and lead is not None and train is not None and
+                    proj is not None and peer is not None and level != "Choose")
 
-        train_options = ["Choose an option"] + list(range(0, 201, 20))
-        train = st.selectbox(
-            "Training Hours (0–200)",
-            train_options,
-            index=0,
-            key="m_train"
-        )
-
-        proj_options = ["Choose an option"] + list(range(0, 21))
-        proj = st.selectbox(
-            "Projects Handled (0–20)",
-            proj_options,
-            index=0,
-            key="m_proj"
-        )
-
-        peer_options = ["Choose an option"] + list(range(0, 101, 10))
-        peer = st.selectbox(
-            "Peer Review Score (0–100)",
-            peer_options,
-            index=0,
-            key="m_peer"
-        )
-
-        level = st.selectbox(
-            "Current Position Level",
-            ["Choose an option","Junior","Mid","Senior","Lead"],
-            index=0,
-            key="m_level"
-        )
-
-        required_filled = (
-            (age is not None) and
-            (perf != "Choose an option") and
-            (lead != "Choose an option") and
-            (train != "Choose an option") and
-            (proj != "Choose an option") and
-            (peer != "Choose an option") and
-            (level != "Choose an option")
-        )
-
-        if not required_filled:
-            is_empty = True
+        if not required:
             emp = {}
+            is_empty = True
         else:
-            is_empty = False
             emp = {
-                "Employee_ID": emp_id_input.strip() if emp_id_input.strip() else "—",
+                "Employee_ID": emp_id_input.strip() if emp_id_input and emp_id_input.strip() else "—",
                 "Age": age,
-                "Performance_Score": int(perf),
-                "Leadership_Score": float(lead),
-                "Training_Hours": float(train),
-                "Projects_Handled": float(proj),
-                "Peer_Review_Score": float(peer),
-                "Current_Position_Level": level,
+                "Performance_Score": perf,
+                "Leadership_Score": lead,
+                "Training_Hours": train,
+                "Projects_Handled": proj,
+                "Peer_Review_Score": peer,
+                "Current_Position_Level": level
             }
+            is_empty = False
 
-    # -----------------------------
+    # ===========================================================
     # 3) UPLOAD CSV
-    # -----------------------------
+    # ===========================================================
     elif mode == "Upload employee data in bulk using CSV":
         st.markdown("*Upload a CSV following the required format.*")
-        st.markdown('<a id="select-employee-id"></a>', unsafe_allow_html=True)
 
-        template_df = pd.DataFrame({
+        template = pd.DataFrame({
             "Employee_ID":["EMP0001"],
             "Age":[30],
             "Performance_Score":[5],
@@ -870,334 +937,242 @@ with tab3:
             "Peer_Review_Score":[75],
             "Current_Position_Level":["Senior"]
         })
+        st.download_button("Download template CSV", template.to_csv(index=False), "template.csv")
 
-        st.download_button("Download template CSV", template_df.to_csv(index=False), "employee_template.csv")
         uploaded = st.file_uploader("Upload CSV:", type=["csv"])
-
         if uploaded:
             try:
                 new = pd.read_csv(uploaded)
-
-                required_cols = {
-                    "Employee_ID","Age","Performance_Score","Leadership_Score",
-                    "Training_Hours","Projects_Handled","Peer_Review_Score","Current_Position_Level"
-                }
-
+                required_cols = set(template.columns)
                 if not required_cols.issubset(set(new.columns)):
-                    # Big red card (consistent style)
-                    st.markdown(
-                        """
-                        <div style="
-                            margin-top:18px;
-                            padding:22px;
-                            border-radius:14px;
-                            background-color:#ff4d4f;
-                            color:white;
-                            font-size:19px;
-                            font-weight:700;
-                            line-height:1.5;
-                        ">
-                            ✗ Upload failed.<br>
-                            Required columns are missing. Please use the template.
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                else:
-                    # --- SAFE: enrich using combined dataframe so clustering/training won't run on tiny 'new' only ---
-                    existing = st.session_state.get("master_df", pd.DataFrame())
-                    # If master_df is empty, just concat so apply_* sees more samples if available in existing;
-                    # otherwise apply to combined to let function use existing centroids/models.
-                    combined = pd.concat([existing, new], ignore_index=True) if not existing.empty else new.copy()
+                    st.error("Missing required columns in uploaded CSV. Use the template.")
+                    st.stop()
 
-                    # Do NOT force recompute (we prefer using saved models if present).
-                    combined_enriched = apply_feature_engineering_and_clustering(combined, force_recompute=False)
-
-                    # Extract only the newly uploaded rows (they are at the tail).
-                    new_enriched = combined_enriched.iloc[len(combined_enriched) - len(new):].reset_index(drop=True)
-
-                    # Append enriched new rows to master_df
-                    if existing.empty:
-                        st.session_state["master_df"] = new_enriched.copy()
-                    else:
-                        st.session_state["master_df"] = pd.concat([existing, new_enriched], ignore_index=True)
-
-                    # Refresh local ref
-                    df_ref = st.session_state["master_df"]
-
-                    # === BIG SUCCESS GREEN CARD (stand-out, clickable link) ===
-                    st.markdown(
-                        f"""
-                        <div style="
-                            margin-top:18px;
-                            padding:22px;
-                            border-radius:14px;
-                            background: linear-gradient(180deg,#0fb35f,#00bf63);
-                            color:white;
-                            font-size:20px;
-                            font-weight:700;
-                            line-height:1.4;
-                            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-                        ">
-                            <div style="display:flex;align-items:center;gap:18px;">
-                                <div style="font-size:34px; line-height:1; font-weight:900;">✓</div>
-                                <div style="flex:1;">
-                                    <div style="font-size:22px; font-weight:800; margin-bottom:4px;">
-                                        Successfully uploaded <strong>{len(new)}</strong> rows.
-                                    </div>
-                                    <div style="font-size:15px; opacity:0.95;">
-                                        Go to <span style="font-weight:900;">"Select Employee ID"</span> to view and analyze the new entries.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
+                enriched = apply_feature_engineering_and_clustering(new.copy())
+                # append to master safely
+                st.session_state["master_df"] = pd.concat([df_ref, enriched], ignore_index=True)
+                st.success(f"Uploaded {len(new)} rows. Go to 'Select employee ID' to view/inspect.")
             except Exception as e:
-                # Big red card with actual error message
-                st.markdown(
-                    f"""
-                    <div style="
-                        margin-top:18px;
-                        padding:22px;
-                        border-radius:14px;
-                        background-color:#ff4d4f;
-                        color:white;
-                        font-size:19px;
-                        font-weight:700;
-                        line-height:1.5;
-                    ">
-                        ✗ Failed to read uploaded CSV.<br>
-                        <div style="font-size:14px; font-weight:400; margin-top:8px; opacity:0.95;">{str(e)}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                st.error(f"Upload failed: {e}")
 
         st.stop()
 
-    # -----------------------------
+    # ===========================================================
     # EMPTY VIEW (placeholder)
-    # -----------------------------
+    # ===========================================================
     if is_empty:
         st.markdown("### Overview")
-        o1,o2,o3 = st.columns(3)
-        o1.markdown(small_card("Employee ID", "—"), unsafe_allow_html=True)
-        o2.markdown(small_card("Age", "—"), unsafe_allow_html=True)
-        o3.markdown(small_card("Position Level", "—"), unsafe_allow_html=True)
+        a,b,c = st.columns(3)
+        a.markdown(small_card("Employee ID","—"), unsafe_allow_html=True)
+        b.markdown(small_card("Age","—"), unsafe_allow_html=True)
+        c.markdown(small_card("Position Level","—"), unsafe_allow_html=True)
 
         st.markdown("### Key Talent Indexes")
-        ki1,ki2,ki3 = st.columns(3)
-        ki1.markdown(small_card("Performance Idx", "—"), unsafe_allow_html=True)
-        ki2.markdown(small_card("Leadership Idx", "—"), unsafe_allow_html=True)
-        ki3.markdown(small_card("Potential Idx", "—"), unsafe_allow_html=True)
+        x,y,z = st.columns(3)
+        x.markdown(small_card("Performance Idx","—"), unsafe_allow_html=True)
+        y.markdown(small_card("Leadership Idx","—"), unsafe_allow_html=True)
+        z.markdown(small_card("Potential Idx","—"), unsafe_allow_html=True)
 
         st.markdown("### Character")
-        cc1,cc2 = st.columns([0.25,0.75])
-        cc1.markdown(small_card("Cluster", "—"), unsafe_allow_html=True)
-        cc2.markdown(small_card("Characteristics", "—"), unsafe_allow_html=True)
+        cc1,cc2 = st.columns([0.28,0.72])
+        cc1.markdown(small_card("Cluster","—"), unsafe_allow_html=True)
+        cc2.markdown(small_card("Characteristics","—"), unsafe_allow_html=True)
 
         st.markdown(build_description_card("—"), unsafe_allow_html=True)
-        st.markdown(long_card("HR Recommendations", "—"), unsafe_allow_html=True)
-        st.markdown(long_card("Recommended Development Program", "—"), unsafe_allow_html=True)
+        st.markdown(long_card("HR Recommendations","—"), unsafe_allow_html=True)
+        st.markdown(long_card("Recommended Development Program","—"), unsafe_allow_html=True)
         st.stop()
 
-    # -----------------------------
-    # FEATURE ENGINEERING (safe numeric conversion)
-    # -----------------------------
-    def safe_float(x):
-        try:
-            return float(x)
+# ===== end of PART 1/3 =====
+
+# ===== TAB 3 — PART 2/3 =====
+# (Paste this immediately after Part 1)
+
+    # ===========================================================
+    # FEATURE ENGINEERING (manual or selected employee)
+    # ===========================================================
+    def safe_float(v):
+        try: 
+            return float(v)
         except:
             return 0.0
 
-    for key in ["Leadership_Score","Peer_Review_Score","Performance_Score","Projects_Handled","Training_Hours"]:
-        emp[key] = safe_float(emp.get(key, 0))
+    for k in ["Leadership_Score","Peer_Review_Score","Performance_Score",
+              "Projects_Handled","Training_Hours"]:
+        emp[k] = safe_float(emp.get(k, 0))
 
-    emp["Leadership_Index"] = 0.4*emp["Leadership_Score"] + 0.6*emp["Peer_Review_Score"]
-    emp["Performance_Index"] = 0.5*emp["Performance_Score"] + 0.2*emp["Projects_Handled"] + 0.3*emp["Peer_Review_Score"]
-    emp["Potential_Index"] = 0.4*emp["Training_Hours"] + 0.4*emp["Peer_Review_Score"] + 0.2*emp["Leadership_Score"]
+    emp["Leadership_Index"] = (
+        0.4 * emp["Leadership_Score"] + 
+        0.6 * emp["Peer_Review_Score"]
+    )
 
-    # For the small single-employee prediction we should scale projects/training using the saved scaler (if available)
-    # So we compute scaled values using same scaler used before
-    try:
-        ph_scaler = joblib.load("cluster_scaler.pkl")
-        scaled = ph_scaler.transform(np.array([[emp.get("Projects_Handled",0.0), emp.get("Training_Hours",0.0)]]))
-        emp["Projects_Handled_scaled"] = float(scaled[0,0])
-        emp["Training_Hours_scaled"] = float(scaled[0,1])
-    except Exception:
-        # fallback: simple copy (no scaling)
-        emp["Projects_Handled_scaled"] = float(emp.get("Projects_Handled",0.0))
-        emp["Training_Hours_scaled"] = float(emp.get("Training_Hours",0.0))
+    emp["Performance_Index"] = (
+        0.5 * emp["Performance_Score"] +
+        0.2 * emp["Projects_Handled"] +
+        0.3 * emp["Peer_Review_Score"]
+    )
 
-    emp["Performance_Consistency"] = emp.get("Performance_Score",0.0) * emp["Projects_Handled_scaled"]
-    emp["Growth_Momentum"] = emp["Projects_Handled_scaled"] / (emp["Training_Hours_scaled"] + 1.0)
+    emp["Potential_Index"] = (
+        0.4 * emp["Training_Hours"] +
+        0.4 * emp["Peer_Review_Score"] +
+        0.2 * emp["Leadership_Score"]
+    )
 
-    # -----------------------------
-    # CLUSTERING (robust): try model files; else fallback to centroid-distance using df_ref
-    # -----------------------------
+    # ===========================================================
+    # STABLE CLUSTER ASSIGNMENT (tidak berubah-ubah!)
+    # ===========================================================
     emp["Cluster"] = None
     try:
-        if all(k in emp for k in ["Performance_Index","Leadership_Index","Potential_Index"]):
-            assigned = None
-            # 1) try to use saved scaler + kmeans
-            csc_path = "cluster_scaler_3.pkl"
-            kpath = "cluster_model.pkl"
-            loaded = False
-            if os.path.exists(csc_path) and os.path.exists(kpath):
-                try:
-                    csc = joblib.load(csc_path)
-                    kmeans = joblib.load(kpath)
-                    arr = csc.transform(np.array([[emp["Performance_Index"], emp["Leadership_Index"], emp["Potential_Index"]]]))
-                    lab = kmeans.predict(arr)[0]
-                    assigned = int(lab) + 1
-                    loaded = True
-                except Exception:
-                    assigned = None
-                    loaded = False
+        scaler_path = "models/cluster_scaler_3.pkl"
+        model_path  = "models/cluster_model.pkl"
 
-            # 2) fallback: if df_ref contains Cluster and centroids can be computed, use nearest centroid (no file dependency)
-            if not loaded:
-                if ("Cluster" in df_ref.columns) and (not df_ref.empty) and set(["Performance_Index","Leadership_Index","Potential_Index"]).issubset(df_ref.columns):
-                    # compute centroids from master data (grouped by existing Cluster values)
-                    try:
-                        centroids = (
-                            df_ref.groupby("Cluster")[["Performance_Index","Leadership_Index","Potential_Index"]]
-                            .mean()
-                            .dropna()
-                        )
-                        if not centroids.empty:
-                            # compute distances
-                            vec = np.array([emp["Performance_Index"], emp["Leadership_Index"], emp["Potential_Index"]], dtype=float)
-                            dists = ((centroids.values - vec.reshape(1, -1))**2).sum(axis=1)
-                            idx = int(np.argmin(dists))
-                            # centroid index -> get cluster label (index into centroids index)
-                            cluster_label = centroids.index[idx]
-                            try:
-                                assigned = int(cluster_label)
-                            except Exception:
-                                # if cluster index is not int (e.g. float), coerce
-                                assigned = int(float(cluster_label))
-                    except Exception:
-                        assigned = None
+        if os.path.exists(scaler_path) and os.path.exists(model_path):
 
-            emp["Cluster"] = assigned
+            scaler = joblib.load(scaler_path)
+            kmeans = joblib.load(model_path)
+
+            arr = scaler.transform([[
+                emp["Performance_Index"],
+                emp["Leadership_Index"],
+                emp["Potential_Index"]
+            ]])
+
+            raw_label = int(kmeans.predict(arr)[0])  # 0–3
+
+            # hitung centroid untuk ranking stabil
+            cent = pd.DataFrame(
+                kmeans.cluster_centers_,
+                columns=["Performance_Index","Leadership_Index","Potential_Index"]
+            )
+            cent["score"] = cent.sum(axis=1)
+
+            # ranking cluster dari terbaik → terburuk
+            ordered = cent.sort_values("score", ascending=False).index.tolist()
+
+            # MAPPING FINAL (fix, tidak akan berubah)
+            stable_map = {
+                ordered[0]: 3,   # High Performer
+                ordered[1]: 4,   # Consistent Performer
+                ordered[2]: 1,   # Underdeveloped Potential
+                ordered[3]: 2    # At-Risk & Underpowered
+            }
+
+            emp["Cluster"] = stable_map.get(raw_label, 1)
+
+        else:
+            # fallback paling aman
+            emp["Cluster"] = 1
+
     except Exception:
-        emp["Cluster"] = None
+        emp["Cluster"] = 1
 
-    # lookup info safely
-    if emp.get("Cluster") is None:
-        info = {"Characteristics":"—","Description":"—","HR_Recommendations":"—","HR_Programs":"—"}
-    else:
-        # ensure we use int key
-        try:
-            ik = int(emp.get("Cluster"))
-        except Exception:
-            try:
-                ik = int(float(emp.get("Cluster")))
-            except Exception:
-                ik = None
-        info = cluster_map.get(ik, {"Characteristics":"—","Description":"—","HR_Recommendations":"—","HR_Programs":"—"})
+    # ===========================================================
+    # METADATA LOOKUP (Characteristics, Description, HR Programs)
+    # ===========================================================
+    info = cluster_map.get(
+        int(emp["Cluster"]),
+        {
+            "Characteristics": "—",
+            "Description": "—",
+            "HR_Recommendations": "—",
+            "HR_Programs": "—"
+        }
+    )
 
-    # -----------------------------
-    # OVERVIEW (Employee ID, Age, Position Level)
-    # -----------------------------
+    # ===========================================================
+    # OVERVIEW SECTION
+    # ===========================================================
     st.markdown("### Overview")
-    oo1,oo2,oo3 = st.columns(3)
-    oo1.markdown(small_card("Employee ID", emp.get("Employee_ID","—")), unsafe_allow_html=True)
-    oo2.markdown(small_card("Age", emp.get("Age","—")), unsafe_allow_html=True)
-    oo3.markdown(small_card("Position Level", emp.get("Current_Position_Level","—")), unsafe_allow_html=True)
+    oo1, oo2, oo3 = st.columns(3)
 
-    # -----------------------------
-    # KEY TALENT INDEXES (3 columns)
-    # -----------------------------
+    oo1.markdown(small_card("Employee ID", emp.get("Employee_ID", "—")),
+                 unsafe_allow_html=True)
+    oo2.markdown(small_card("Age", emp.get("Age", "—")),
+                 unsafe_allow_html=True)
+    oo3.markdown(small_card("Position Level",
+                            emp.get("Current_Position_Level", "—")),
+                 unsafe_allow_html=True)
+
+    # ===========================================================
+    # KEY TALENT INDEXES
+    # ===========================================================
     st.markdown("### Key Talent Indexes")
-    avg_perf = df_ref["Performance_Index"].mean() if "Performance_Index" in df_ref.columns and not df_ref.empty else 0.0
-    avg_lead = df_ref["Leadership_Index"].mean() if "Leadership_Index" in df_ref.columns and not df_ref.empty else 0.0
-    avg_pot  = df_ref["Potential_Index"].mean() if "Potential_Index" in df_ref.columns and not df_ref.empty else 0.0
+    k1, k2, k3 = st.columns(3)
 
-    c1,c2,c3 = st.columns(3)
-    c1.markdown(
-        small_card(
-            "Performance Idx",
-            f"{emp.get('Performance_Index',0.0):.2f} | Avg {avg_perf:.2f}",
-            "#00bf63" if emp.get("Performance_Index",0.0) >= avg_perf else "#ff5757"
-        ),
-        unsafe_allow_html=True
-    )
+    k1.markdown(small_card("Performance Idx",
+                           f"{emp['Performance_Index']:.2f}"),
+                unsafe_allow_html=True)
 
-    c2.markdown(
-        small_card(
-            "Leadership Idx",
-            f"{emp.get('Leadership_Index',0.0):.2f} | Avg {avg_lead:.2f}",
-            "#00bf63" if emp.get("Leadership_Index",0.0) >= avg_lead else "#ff5757"
-        ),
-        unsafe_allow_html=True
-    )
+    k2.markdown(small_card("Leadership Idx",
+                           f"{emp['Leadership_Index']:.2f}"),
+                unsafe_allow_html=True)
 
-    c3.markdown(
-        small_card(
-            "Potential Idx",
-            f"{emp.get('Potential_Index',0.0):.2f} | Avg {avg_pot:.2f}",
-            "#00bf63" if emp.get("Potential_Index",0.0) >= avg_pot else "#ff5757"
-        ),
-        unsafe_allow_html=True
-    )
+    k3.markdown(small_card("Potential Idx",
+                           f"{emp['Potential_Index']:.2f}"),
+                unsafe_allow_html=True)
 
-    # -----------------------------
-    # CHARACTER & HR INSIGHTS (proportional)
-    # -----------------------------
+    # ===========================================================
+    # CHARACTER + HR INSIGHTS
+    # ===========================================================
     st.markdown("### Character")
-    cc1,cc2 = st.columns([0.28,0.72])
-    cc1.markdown(small_card("Cluster", emp.get("Cluster","—")), unsafe_allow_html=True)
-    cc2.markdown(small_card("Characteristics", info.get("Characteristics","—")), unsafe_allow_html=True)
+    cc1, cc2 = st.columns([0.28, 0.72])
 
-    st.markdown(build_description_card(info.get("Description","—")), unsafe_allow_html=True)
-    st.markdown(long_card("HR Recommendations", info.get("HR_Recommendations","—")), unsafe_allow_html=True)
-    st.markdown(long_card("Recommended Development Program", info.get("HR_Programs","—")), unsafe_allow_html=True)
+    cc1.markdown(
+        small_card("Cluster", emp["Cluster"]),
+        unsafe_allow_html=True
+    )
+    cc2.markdown(
+        small_card("Characteristics", info["Characteristics"]),
+        unsafe_allow_html=True
+    )
 
-    # Save back to globals for compatibility with rest of app (optional)
-    globals()["df"] = st.session_state["master_df"]
+    st.markdown(
+        build_description_card(info["Description"]),
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        long_card("HR Recommendations", info["HR_Recommendations"]),
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        long_card("Recommended Development Program", info["HR_Programs"]),
+        unsafe_allow_html=True
+    )
 
-    # =====================================================================
-    # 🧠 Predict Promotion Eligibility — unchanged from original UI
-    # =====================================================================
+# ===== end of PART 2/3 =====
+
+# ===== TAB 3 — PART 3/3: Prediction + Radar + Explanations =====
+# (Paste this immediately after Part 2)
+
+    # ===========================================================
+    # PREDICTION ENGINE (FULL — radar, strengths/weaknesses, succession)
+    # ===========================================================
     import math
     import traceback
     import streamlit.components.v1 as components
 
-    st.markdown("## 🧠 Promotion Eligibility Calculator")
-
-    # -------------------------
-    # Load model
-    # -------------------------
-    try:
-        lr_model = joblib.load("models/logistic_pipeline.pkl")
-    except Exception:
-        st.error("Model logistic_pipeline.pkl tidak ditemukan di folder /models.")
-        st.stop()
-
-    # -------------------------
-    # Guards
-    # -------------------------
-    if not emp or not isinstance(emp, (dict, pd.Series)):
-        st.info("Isi data talent terlebih dahulu (emp belum tersedia).")
-        st.stop()
-    if not isinstance(df, pd.DataFrame):
-        st.error("Dataset `df` tidak ditemukan atau bukan DataFrame.")
-        st.stop()
-
-    def safe_get(d, key, default=0.0):
+    # load model (try common paths)
+    lr_model = None
+    for p in ["models/logistic_pipeline.pkl", "logistic_pipeline.pkl", "models/logistic_pipeline.joblib"]:
         try:
-            v = d.get(key, default) if isinstance(d, dict) else d.get(key, default)
-            if v is None or (isinstance(v, float) and math.isnan(v)):
-                return float(default)
-            return float(v)
+            if os.path.exists(p):
+                lr_model = joblib.load(p)
+                break
         except Exception:
-            return float(default)
+            lr_model = None
 
+    if lr_model is None:
+        st.error("Model `models/logistic_pipeline.pkl` tidak ditemukan. Letakkan model di folder /models.")
+        st.stop()
+
+    def safe_get(d, key):
+        try:
+            v = d.get(key, 0) if isinstance(d, dict) else d[key]
+            return float(v) if v is not None else 0.0
+        except Exception:
+            return 0.0
+
+    # build input dict used by model
     input_dict = {
         "Age": safe_get(emp, "Age"),
         "Performance_Index": safe_get(emp, "Performance_Index"),
@@ -1209,6 +1184,7 @@ with tab3:
         "Performance_Consistency": safe_get(emp, "Performance_Consistency"),
         "Growth_Momentum": safe_get(emp, "Growth_Momentum")
     }
+
     input_df = pd.DataFrame([input_dict])
 
     promotion_score = (
@@ -1220,66 +1196,74 @@ with tab3:
     )
 
     try:
-        df_promo = (
-            0.30 * st.session_state["master_df"]["Performance_Index"] +
-            0.25 * st.session_state["master_df"]["Potential_Index"] +
-            0.20 * st.session_state["master_df"]["Leadership_Index"] +
-            0.15 * st.session_state["master_df"]["Performance_Consistency"] +
-            0.10 * st.session_state["master_df"]["Growth_Momentum"]
+        df_promo_series = (
+            0.30 * df_ref["Performance_Index"] +
+            0.25 * df_ref["Potential_Index"] +
+            0.20 * df_ref["Leadership_Index"] +
+            0.15 * df_ref["Performance_Consistency"] +
+            0.10 * df_ref["Growth_Momentum"]
         )
-        promo_threshold = df_promo.quantile(0.85)
+        promo_threshold = df_promo_series.quantile(0.85)
     except Exception:
         promo_threshold = float("nan")
 
-    components.html(
-        """
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-        </style>
-        """,
-        height=0
-    )
+    # Button (if Part2 already had a button, duplicating is safe here as user will paste sequentially)
+    st.markdown("<div style='height:22px'></div>", unsafe_allow_html=True)  # spacer
+    run_prediction = st.button("🔮 Predict Promotion Eligibility (Run)")
 
-    run_prediction = st.button("🔮 Check Eligibility", key="predict_promotion_btn_final")
     if not run_prediction:
         st.stop()
 
+    # perform prediction & render full analysis
     try:
-        pred = int(lr_model.predict(input_df)[0])
+        pred_raw = lr_model.predict(input_df)[0]
+        pred = int(pred_raw)
         is_eligible = (pred == 1)
         status_color = "#00bf63" if is_eligible else "#ff5757"
         promo_str = f"{promotion_score:.2f}"
         threshold_str = f"{promo_threshold:.2f}" if not math.isnan(promo_threshold) else "N/A"
 
+        # ensure Inter font loads for consistent look
+        components.html("""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        </style>
+        """, height=0)
+
         wrapper_style = "width:calc(100% - 144px); margin-left:72px; margin-right:72px; box-sizing:border-box;"
 
         big_html = f"""
-    <div style="{wrapper_style}">
-    <div style="background:#2e307d; border-radius:22px; padding:32px; box-sizing:border-box; font-family:Inter, sans-serif; color:white; overflow:hidden;">
-        <h2 style="margin:0; font-size:32px; font-weight:800; color:white;">This employee is</h2>
+        <div style="{wrapper_style}">
+        <div style="background:#2e307d; border-radius:22px; padding:32px; box-sizing:border-box;
+                    font-family:Inter, sans-serif; color:white; overflow:hidden;">
+            <h2 style="margin:0; font-size:32px; font-weight:800; color:white;">Promotion Prediction</h2>
 
-        <div style="margin-top:16px; font-size:40px; font-weight:800; color:{status_color};">
-        {"Eligible for Promotion" if is_eligible else "Not Yet Eligible"}
-        </div>
+            <div style="margin-top:16px; font-size:40px; font-weight:800; color:{status_color};">
+                {"Eligible for Promotion" if is_eligible else "Not Eligible"}
+            </div>
 
-        <div style="margin-top:12px; font-size:20px; color:white;">
-        Promotion Score: <span style="color:{status_color}; font-size:24px; font-weight:700;">{promo_str}</span>
-        &nbsp;&nbsp;·&nbsp;&nbsp;
-        Threshold (Q85): <span style="color:white; font-size:24px; font-weight:700;">{threshold_str}</span>
-        </div>
+            <div style="margin-top:12px; font-size:20px; color:white;">
+                Promotion Score:
+                <span style="color:{status_color}; font-size:24px; font-weight:700;">{promo_str}</span>
+                &nbsp;&nbsp;·&nbsp;&nbsp;
+                Threshold (Q85):
+                <span style="color:white; font-size:24px; font-weight:700;">{threshold_str}</span>
+            </div>
 
-        <h2 style="margin-top:28px; font-size:28px; font-weight:800; color:white;">Why This Result?</h2>
-    """
+            <h2 style="margin-top:28px; font-size:28px; font-weight:800; color:white;">Why This Result?</h2>
+        """
 
+        # feature-level analysis
         features_raw = [
             "Performance_Score","Leadership_Score","Peer_Review_Score",
             "Training_Hours","Projects_Handled","Performance_Consistency","Growth_Momentum"
         ]
+
         vals = {f: safe_get(emp, f) for f in features_raw}
         means = {}
         for f in features_raw:
             try:
-                means[f] = float(st.session_state["master_df"][f].mean())
+                means[f] = float(df_ref[f].mean())
             except Exception:
                 means[f] = float("nan")
 
@@ -1289,97 +1273,126 @@ with tab3:
             v = vals[f]
             avg = means[f]
             if math.isnan(avg):
+                # skip comparison if no population mean
                 continue
             if v >= avg:
-                strengths.append((f,v,avg))
+                strengths.append((f, v, avg))
             else:
-                weaknesses.append((f,v,avg))
+                weaknesses.append((f, v, avg))
 
-        if not is_eligible:
-            big_html += '<div style="margin-top:10px; font-size:18px; color:white; line-height:1.7;">'
-            if weaknesses:
-                big_html += '<div style="font-weight:700; margin-bottom:6px;">Areas Below Expectation:</div>'
-                for f,v,avg in weaknesses:
-                    big_html += f'<div style="margin-bottom:6px;">{f.replace("_"," ")}: <span style="color:#ff5757; font-weight:700;">{v:.1f}</span> <span style="color:#bbb;">(avg {avg:.1f})</span></div>'
-            else:
-                big_html += '<div style="margin-bottom:6px;">Semua feature berada di sekitar rata-rata.</div>'
+        # Always show both sections if data exist:
+        # If eligible: show Top Strengths and then "Can Be Improved" if any weaknesses
+        # If not eligible: show Areas Below Expectation and then "Strengths" if any
+        big_html += '<div style="margin-top:10px; font-size:18px; line-height:1.7;">'
+        if is_eligible:
+            big_html += '<div style="font-weight:700; margin-bottom:6px; color:#00bf63;">Top Strengths:</div>'
             if strengths:
-                big_html += '<div style="margin-top:12px; font-weight:700;">Strengths:</div>'
                 for f,v,avg in strengths:
-                    big_html += f'<div style="margin-bottom:6px;">{f.replace("_"," ")}: <span style="color:#00bf63; font-weight:700;">{v:.1f}</span> <span style="color:#bbb;">(avg {avg:.1f})</span></div>'
-            big_html += '</div>'
+                    big_html += f"<div>{f.replace('_',' ')}: <span style='color:#00bf63;font-weight:700'>{v:.1f}</span> <span style='color:#bbb'>(avg {avg:.1f})</span></div>"
+            else:
+                big_html += "<div>No feature clearly above population mean.</div>"
+
+            if weaknesses:
+                big_html += '<div style="margin-top:12px; font-weight:700; color:#ffaa00;">Can Be Improved:</div>'
+                for f,v,avg in weaknesses:
+                    big_html += f"<div>{f.replace('_',' ')}: <span style='color:#ff5757;font-weight:700'>{v:.1f}</span> <span style='color:#bbb'>(avg {avg:.1f})</span></div>"
         else:
-            big_html += '<div style="margin-top:10px; font-size:18px; color:white; line-height:1.7;">'
-            if strengths:
-                big_html += '<div style="font-weight:700; margin-bottom:6px;">Top Strengths:</div>'
-                for f,v,avg in strengths:
-                    big_html += f'<div style="margin-bottom:6px;">{f.replace("_"," ")}: <span style="color:#00bf63; font-weight:700;">{v:.1f}</span> <span style="color:#bbb;">(avg {avg:.1f})</span></div>'
-            else:
-                big_html += '<div style="margin-bottom:6px;">Tidak ada feature menonjol di atas rata-rata.</div>'
+            big_html += '<div style="font-weight:700; margin-bottom:6px; color:#ff5757;">Areas Below Expectation:</div>'
             if weaknesses:
-                big_html += '<div style="margin-top:12px; font-weight:700;">Can Be Improved:</div>'
                 for f,v,avg in weaknesses:
-                    big_html += f'<div style="margin-bottom:6px;">{f.replace("_"," ")}: <span style="color:#ff5757; font-weight:700;">{v:.1f}</span> <span style="color:#bbb;">(avg {avg:.1f})</span></div>'
-            big_html += '</div>'
+                    big_html += f"<div>{f.replace('_',' ')}: <span style='color:#ff5757;font-weight:700'>{v:.1f}</span> <span style='color:#bbb'>(avg {avg:.1f})</span></div>"
+            else:
+                big_html += "<div>All features are around or above the mean.</div>"
 
-        # radar chart (unchanged)
+            if strengths:
+                big_html += '<div style="margin-top:12px; font-weight:700; color:#00bf63;">Strengths:</div>'
+                for f,v,avg in strengths:
+                    big_html += f"<div>{f.replace('_',' ')}: <span style='color:#00bf63;font-weight:700'>{v:.1f}</span> <span style='color:#bbb'>(avg {avg:.1f})</span></div>"
+        big_html += '</div>'
+
+        # -------------------------
+        # RADAR CHART (matplotlib → base64)
+        # -------------------------
         angles = np.linspace(0, 2*np.pi, len(features_raw), endpoint=False).tolist()
         angles += angles[:1]
-        emp_plot = [vals[f] for f in features_raw] + [vals[features_raw[0]]]
+
+        emp_plot = [vals[f] if not math.isnan(vals[f]) else 0 for f in features_raw] + [vals[features_raw[0]] if not math.isnan(vals[features_raw[0]]) else 0]
         avg_plot = [means[f] if not math.isnan(means[f]) else 0 for f in features_raw] + [means[features_raw[0]] if not math.isnan(means[features_raw[0]]) else 0]
 
         fig, ax = plt.subplots(figsize=(7,7), subplot_kw=dict(polar=True))
         fig.patch.set_alpha(0)
         ax.set_facecolor("none")
+
+        # plot population avg and employee
         ax.plot(angles, avg_plot, color="#bbbbbb", linestyle="dashed", linewidth=2)
         ax.fill(angles, avg_plot, alpha=0.06, color="#bbbbbb")
+
         ax.plot(angles, emp_plot, color="#00bf63", linewidth=3)
         ax.fill(angles, emp_plot, alpha=0.18, color="#00bf63")
+
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels([f.replace("_"," ") for f in features_raw], color="white", fontsize=11)
         ax.grid(color="white", alpha=0.35)
+
         for spine in ax.spines.values():
             spine.set_color("white")
 
         buf = BytesIO()
-        plt.savefig(buf, dpi=140, format="png", bbox_inches="tight", pad_inches=0.45, facecolor=fig.get_facecolor())
+        plt.savefig(buf, format="png", dpi=140, bbox_inches="tight", pad_inches=0.45, facecolor=fig.get_facecolor())
         buf.seek(0)
         img_b64 = base64.b64encode(buf.read()).decode()
         plt.close(fig)
 
-        big_html += f'''
-        <h2 style="margin-top:28px; font-size:28px; font-weight:800; color:white;">Talent Radar Chart</h2>
+        big_html += f"""
+        <h2 style="margin-top:28px; font-size:28px; font-weight:800;">Talent Radar Chart</h2>
         <div style="margin-top:8px;"><img src="data:image/png;base64,{img_b64}" style="width:100%; border-radius:12px;" /></div>
-        '''
+        """
 
+        # -------------------------
+        # SUCCESSION POTENTIAL / RECOMMENDATIONS
+        # -------------------------
         thr = promo_threshold
-        pscore = promotion_score
-        if math.isnan(pscore) or math.isnan(thr):
+        ps  = promotion_score
+
+        if math.isnan(ps) or math.isnan(thr):
             lvl = "Unknown"; col = "#999999"; dev = ["Insufficient data."]
         else:
-            if pscore >= thr:
+            if ps >= thr:
                 lvl = "High Successor Potential"; col = "#00bf63"
-                dev = ["Provide advanced leadership exposure.", "Start formal succession mentoring.", "Assess readiness for expanded scope."]
-            elif pscore >= thr * 0.9:
+                dev = [
+                    "Provide advanced leadership exposure.",
+                    "Start formal succession mentoring.",
+                    "Assess readiness for expanded scope."
+                ]
+            elif ps >= thr * 0.9:
                 lvl = "Emerging Successor"; col = "#ffaa00"
-                dev = ["Start mid-level leadership coaching.", "Increase cross-functional visibility.", "Gradually expand strategic responsibilities."]
+                dev = [
+                    "Start mid-level leadership coaching.",
+                    "Increase cross-functional visibility.",
+                    "Gradually expand strategic responsibilities."
+                ]
             else:
                 lvl = "Low Successor Potential"; col = "#ff5757"
-                dev = ["Strengthen foundational competencies.", "Improve peer collaboration & influence.", "Enroll in capability-building programs."]
+                dev = [
+                    "Strengthen foundational competencies.",
+                    "Improve peer collaboration & influence.",
+                    "Enroll in capability-building programs."
+                ]
 
-        big_html += f'''
-        <h2 style="margin-top:24px; font-size:28px; font-weight:800; color:white;">Succession Potential Indicator</h2>
-        <div style="margin-top:8px; font-size:22px; font-weight:800; color:{col};">{lvl}</div>
+        big_html += f"""
+        <h2 style="margin-top:26px; font-size:28px; font-weight:800;">Succession Potential Indicator</h2>
+        <div style="font-size:24px; font-weight:800; color:{col}; margin-top:8px;">{lvl}</div>
         <ul style="margin-top:8px; color:white; font-size:17px;">
-        '''
-        for it in dev:
-            big_html += f"<li style='margin-top:6px'>{it}</li>"
+        """
+        for d in dev:
+            big_html += f"<li style='margin-top:6px'>{d}</li>"
         big_html += "</ul>"
 
         big_html += "</div></div>"
 
-        components.html(big_html, height=1400, scrolling=True)
+        # render full HTML (scrolling)
+        components.html(big_html, height=1450, scrolling=True)
 
     except Exception:
-        st.error("Error during prediction.")
+        st.error("Prediction failed.")
         st.code(traceback.format_exc())
