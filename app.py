@@ -856,6 +856,10 @@ with tab3:
     # -----------------------------
     # 3) UPLOAD CSV
     # -----------------------------
+    
+    # -----------------------------
+    # 3) UPLOAD CSV
+    # -----------------------------
     elif mode == "Upload employee data in bulk using CSV":
         st.markdown("*Upload a CSV following the required format.*")
         st.markdown('<a id="select-employee-id"></a>', unsafe_allow_html=True)
@@ -883,6 +887,7 @@ with tab3:
                     "Training_Hours","Projects_Handled","Peer_Review_Score","Current_Position_Level"
                 }
 
+                # ❌ Missing Columns
                 if not required_cols.issubset(set(new.columns)):
                     st.markdown(
                         """
@@ -902,18 +907,68 @@ with tab3:
                         """,
                         unsafe_allow_html=True
                     )
+
                 else:
-                    # Before appending, compute FE + cluster on new rows
+                    # FE + Clustering on uploaded rows
                     new_enriched = apply_feature_engineering_and_clustering(new.copy())
-                    # Append to master dataframe (keep existing)
+
+                    # Append to master DF
                     st.session_state["master_df"] = pd.concat(
                         [st.session_state["master_df"], new_enriched], ignore_index=True
                     )
                     df_ref = st.session_state["master_df"]
 
-                    # success message (kept UI style simple)
-                    st.success(f"✓ Successfully uploaded {len(new)} rows. 👉 Go to 'Select Employee ID' option.")
+                    # ------------------------------
+                    # SUCCESS CARD — BIG & BEAUTIFUL
+                    # ------------------------------
+                    wrapper_style = (
+                        "width:calc(100% - 144px);"
+                        "margin-left:72px;"
+                        "margin-right:72px;"
+                        "box-sizing:border-box;"
+                    )
+
+                    st.markdown(
+                        f"""
+                        <div style="{wrapper_style}">
+                            <div style="
+                                background: linear-gradient(90deg, #00c46a, #00a859);
+                                padding:26px 30px;
+                                border-radius:18px;
+                                color:white;
+                                font-family: Inter, sans-serif;
+                                box-shadow:0 12px 28px rgba(0,0,0,0.22);
+                                display:flex;
+                                gap:18px;
+                                align-items:flex-start;
+                            ">
+
+                                <div style="font-size:42px; line-height:1; font-weight:900;">✓</div>
+
+                                <div style="flex:1;">
+                                    <div style="font-size:24px; font-weight:800; margin-bottom:6px;">
+                                        Successfully uploaded <strong>{len(new)}</strong> rows.
+                                    </div>
+                                    <div style="font-size:18px; opacity:0.95; line-height:1.45;">
+                                        Go to <span style="font-weight:900;">“Select Employee ID”</span> to view and analyze the new entries.
+                                    </div>
+                                </div>
+
+                                <div style="flex-shrink:0;">
+                                    <a href="#select-employee-id"
+                                    style="color:white; text-decoration:underline; font-weight:700; font-size:15px;">
+                                        Jump to selector
+                                    </a>
+                                </div>
+
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
             except Exception as e:
+                # ❌ READ FAILURE CARD
                 st.markdown(
                     f"""
                     <div style="
