@@ -853,7 +853,7 @@ with tab3:
                 "Current_Position_Level": level,
             }
 
-        # -----------------------------
+    # -----------------------------
     # 3) UPLOAD CSV
     # -----------------------------
     elif mode == "Upload employee data in bulk using CSV":
@@ -948,11 +948,6 @@ with tab3:
                                     <div style="font-size:15px; opacity:0.95;">
                                         Go to <span style="font-weight:900;">"Select Employee ID"</span> to view and analyze the new entries.
                                     </div>
-                                </div>
-                                <div style="flex-shrink:0;">
-                                    <a href="#select-employee-id" style="color:white; text-decoration:underline; font-weight:700; font-size:15px;">
-                                        Jump to selector →
-                                    </a>
                                 </div>
                             </div>
                         </div>
