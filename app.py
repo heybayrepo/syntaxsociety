@@ -1168,7 +1168,7 @@ with tab3:
     import traceback
     import streamlit.components.v1 as components
 
-    st.markdown("## 🧠 Predict Promotion Eligibility")
+    st.markdown("## 🧠 Promotion Eligibility Calculator")
 
     # -------------------------
     # Load model
@@ -1240,7 +1240,7 @@ with tab3:
         height=0
     )
 
-    run_prediction = st.button("🔮 Predict Promotion Eligibility", key="predict_promotion_btn_final")
+    run_prediction = st.button("🔮 Check Eligibility", key="predict_promotion_btn_final")
     if not run_prediction:
         st.stop()
 
@@ -1256,10 +1256,10 @@ with tab3:
         big_html = f"""
     <div style="{wrapper_style}">
     <div style="background:#2e307d; border-radius:22px; padding:32px; box-sizing:border-box; font-family:Inter, sans-serif; color:white; overflow:hidden;">
-        <h2 style="margin:0; font-size:32px; font-weight:800; color:white;">Promotion Prediction</h2>
+        <h2 style="margin:0; font-size:32px; font-weight:800; color:white;">This employee is</h2>
 
         <div style="margin-top:16px; font-size:40px; font-weight:800; color:{status_color};">
-        {"Eligible for Promotion" if is_eligible else "Not Eligible"}
+        {"Eligible for Promotion" if is_eligible else "Not Yet Eligible"}
         </div>
 
         <div style="margin-top:12px; font-size:20px; color:white;">
