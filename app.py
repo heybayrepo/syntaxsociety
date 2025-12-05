@@ -234,8 +234,8 @@ def apply_feature_engineering_and_clustering(df_in,
 # ---------------------------
 # Load dataset (original path)
 # ---------------------------
-DATA_PATH = "data/Clean/dataset_clustered_dashboard.csv"
-FALLBACK_RAW_PATH = "data/Clean/dataset_test_cluster.csv"
+DATA_PATH = "data/Clean/dataset_for_dashboard.csv"
+FALLBACK_RAW_PATH = "data/Clean/dataset_for_dashboard.csv"
 
 # prefer original clustered dataset if available, else load raw fallback and compute
 if os.path.exists(DATA_PATH):
@@ -1174,9 +1174,9 @@ with tab3:
     # Load model
     # -------------------------
     try:
-        lr_model = joblib.load("logistic_pipeline.pkl")
+        lr_model = joblib.load("models/logistic_pipeline.pkl")
     except Exception:
-        st.error("Model logistic_pipeline.pkl tidak ditemukan.")
+        st.error("Model logistic_pipeline.pkl tidak ditemukan di folder /models.")
         st.stop()
 
     # -------------------------
