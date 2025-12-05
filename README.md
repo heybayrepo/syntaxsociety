@@ -29,7 +29,7 @@ The system combines **data engineering**, **unsupervised learning**, **supervise
 
 ---
 
-## 🧠 System Architecture (Human-Friendly Narrative)
+## 🧠 System Architecture
 
 ### 1️⃣ Data Foundation  
 The journey begins with a cleaned dataset containing performance metrics, leadership scores, training exposure, project involvement, and peer reviews.
@@ -43,6 +43,8 @@ From this foundation, we construct three critical indexes:
 These indexes act as the “DNA” that shapes everything the system knows about a talent.
 
 ---
+
+<img width="803" height="363" alt="Best model is K-Means with K = 4" src="https://github.com/user-attachments/assets/51d41c5b-a4f7-4f1b-933d-0f3e3f63e667" />
 
 ### 2️⃣ Talent Clustering: Discovering Personas  
 Using **K-Means Clustering**, the system identifies four natural groups of talent:
@@ -88,8 +90,8 @@ it tells *why*.
 ---
 
 ### 4️⃣ Streamlit Application  
-Experience the intelligence system live:  
-👉 https://rakaminhrdashboard.streamlit.app/
+
+<img width="1887" height="1102" alt="Dashboard prototype" src="https://github.com/user-attachments/assets/41f9282b-bbaa-4f92-8d8c-d5fba3a0d042" />
 
 Key modules inside the app:
 
@@ -127,6 +129,8 @@ This module brings analytics and AI together in a single experience.
 ## 🚀 Live Demo  
 Experience the system here:  
 👉 **https://rakaminhrdashboard.streamlit.app/**
+
+<img width="1878" height="1209" alt="Prediction system" src="https://github.com/user-attachments/assets/2799734a-16d7-4b99-aa7b-6426e25dd152" />
 
 ---
 
@@ -215,8 +219,7 @@ python scripts/train_eligibility.py
 ---
 
 ## 👤 Authors  
-**Syntax Society — Capstone Project Team**  
-Part of Rakamin Academy’s Data Science program.
+**Syntax Society**  
 
 ---
 
@@ -228,7 +231,7 @@ but as a **storytelling engine for human potential**.
 Data reveals patterns.  
 Models reveal probabilities.  
 But insights?  
-Insights reveal *people*—their strengths, struggles, and opportunities to grow.
+Insights reveal *people*. Their strengths, struggles, and opportunities to grow.
 
 The Rakamin HR Intelligence Hub is built with that philosophy at its core.
 
