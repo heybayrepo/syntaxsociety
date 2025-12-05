@@ -4,6 +4,8 @@
 
 ---
 
+<img width="1497" height="841" alt="The Promotion Paradox" src="https://github.com/user-attachments/assets/f61c6260-a496-4829-ac3d-da4030915849" />
+
 ## 📖 Story Behind the Project  
 
 In many modern organizations, employee data lives in silos: spreadsheets scattered across teams, inconsistent performance reviews, and talent decisions that rely more on intuition than insight.  
