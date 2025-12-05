@@ -1,26 +1,29 @@
 {
-    "Characteristics": {
-        "1": "Under Developed With Potential",
-        "2": "At-Risk and Underpowered",
-        "3": "All Around Top Performer",
-        "4": "Consistent Performer or Leader"
-    },
-    "Description": {
-        "1": "Talents in this cluster show strong potential...",
-        "2": "This cluster has the lowest scores across all indices...",
-        "3": "This group demonstrates the highest levels of performance...",
-        "4": "Talents in this cluster excel in performance and execution..."
-    },
-    "HR_Recommendations": {
-        "1": "Strengthen their acceleration potential...",
-        "2": "Implement targeted capability recovery...",
-        "3": "Fast-track their development...",
-        "4": "Maximize their contribution through specialist paths..."
-    },
-    "HR_Programs": {
-        "1": "Performance improvement training, coaching...",
-        "2": "Core competency training, SOP refreshers...",
-        "3": "Leadership bootcamps, strategic rotations...",
-        "4": "Technical certifications, specialist pathways..."
-    }
+  "Characteristics": {
+    "1": "Under Developed With Potential",
+    "2": "At-Risk and Underpowered",
+    "3": "All Around Top Performer",
+    "4": "Consistent Performer or Leader"
+  },
+
+  "Description": {
+    "1": "Talents in this cluster show strong potential, but their leadership and performance are still developing. They can deliver tasks at a moderate level and demonstrate promising future growth, especially when guided with structured coaching. With the right support, they have the capacity to accelerate quickly and transition into more consistent and high-impact contributors.",
+    "2": "This cluster has the lowest scores across all indices: performance, leadership, and potential. Individuals in this group often struggle with execution and readiness for future roles. They require foundational skill-building, clearer expectations, and closer supervision. Without timely intervention, they are at higher risk for persistent underperformance or disengagement.",
+    "3": "This group demonstrates the highest levels of performance, leadership, and potential. They consistently produce excellent results, adapt quickly, and show strong upward momentum. Cluster 3 members are reliable, proactive, and capable of taking on more strategic responsibilities. They represent the organization’s most promising future leaders and benefit from advanced development opportunities and accelerated pathways.",
+    "4": "Talents in this cluster excel in performance and execution quality. They are dependable contributors with solid task delivery and operational strength. However, their leadership and potential indicators are comparatively lower, suggesting they may thrive best in specialist or individual contributor roles. They bring strong value through expertise and consistency, though not necessarily as leadership-track talent."
+  },
+
+  "HR_Recommendations": {
+    "1": "Strengthen their acceleration potential by designing structured skill-building programs, pairing them with strong mentors, and providing gradual exposure to stretch assignments. Enable clearer pathways to grow their performance and leadership capabilities through guided, hands-on learning.",
+    "2": "Implement targeted capability recovery. Simplify task expectations, rebuild core competencies through foundational training, and provide close, supportive coaching. Establish short-cycle performance check-ins to restore confidence and prevent long-term disengagement or turnover.",
+    "3": "Fast-track their development by placing them in rotational roles, strategic projects, or cross-functional initiatives. Provide senior-leader sponsorship, succession planning visibility, and opportunities that tap into their high leadership and performance trajectory.",
+    "4": "Maximize their contribution through specialist or expert-track development. Assign them to roles requiring high execution reliability, deepen their technical mastery, and offer targeted soft-skill development to gradually strengthen influence. Retain them with recognition, skill growth pathways, and role stability that fits their strengths."
+  },
+
+  "HR_Programs": {
+    "1": "The right program for this group includes performance improvement training, task management workshops, and feedback-based coaching sessions. HR can give them small, challenging tasks such as becoming a PIC assistant or co-lead on simple projects to build leadership readiness. This approach helps them strengthen their execution while maximizing their already apparent great potential.",
+    "2": "This group requires basic interventions such as core competency training, SOP refreshers, and regular coaching. HR also needs to implement individual improvement plans, monthly check-ins, and support programs such as buddy systems to restore motivation and confidence. Performance stability and engagement need to be built early on to prevent them from developing into long-term problems.",
+    "3": "Acceleration programs such as rotational assignments, strategic projects, leadership boot camps, and mentorship with senior leaders are highly relevant for this group. They benefit from high-impact opportunities and clear leadership paths. Exposing them to greater roles will increase retention while accelerating their development as future leaders.",
+    "4": "HR can support this group through specialist career paths, technical certifications, and assignments that maximize their execution strengths. Soft skills development can be provided incrementally to strengthen collaboration and communication abilities. To retain them, recognition programs, skill-based incentives, and long-term career roadmaps are highly effective, given their vital role in operational stability."
+  }
 }
