@@ -21,14 +21,14 @@ table_css = """
 
 /* Background keseluruhan tabel */
 [data-testid="stDataFrame"] .st-ag-theme-streamlit-light {
-    background-color: #2e307d !important;
+    background-color: #449fe3 !important;
 }
 
 /* Cell background */
 [data-testid="stDataFrame"] .ag-root-wrapper,
 [data-testid="stDataFrame"] .ag-center-cols-container,
 [data-testid="stDataFrame"] .ag-cell {
-    background-color: #2e307d !important;
+    background-color: #449fe3 !important;
     color: white !important;
 }
 
@@ -55,7 +55,7 @@ st.markdown(table_css, unsafe_allow_html=True)
 page_bg = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-color: #449fe3;
+    background-color: #2a2b39;
 }
 </style>
 """
@@ -272,11 +272,11 @@ with tab1:
     def overview_card(title, value):
         return f"""
             <div style="
-                border: 3px solid #2e307d;
+                border: 3px solid #449fe3;
                 border-radius: 12px;
                 padding: 16px;
                 margin-bottom: 15px;
-                background-color: #2e307d;
+                background-color: #449fe3;
             ">
                 <h3 style="margin:0;padding:0;color:white;font-size:22px;">{title}</h3>
                 <div style="margin-top:10px;">
@@ -324,15 +324,15 @@ with tab1:
         rows_html += f"""
         <div style="display:flex;justify-content:space-between;padding:4px 0;
                     border-bottom:1px solid rgba(255,255,255,0.05);">
-            <div style="font-size:22px;font-weight:600;color:white;">{r['Current_Position_Level']}</div>
-            <div style="font-size:22px;color:#ddd;">{int(r['Total_Talent'])} talent</div>
+            <div style="font-size:22px;font-weight:600;color:ffffff;">{r['Current_Position_Level']}</div>
+            <div style="font-size:22px;color:#ffffff;">{int(r['Total_Talent'])} talent</div>
         </div>
         """
 
     st.markdown(
         f"""
-        <div style="width:100%;border:3px solid #2e307d;border-radius:12px;
-                    padding:20px;margin-top:10px;background-color:#2e307d;">
+        <div style="width:100%;border:3px solid #449fe3;border-radius:12px;
+                    padding:20px;margin-top:10px;background-color:#449fe3;">
             <div style="font-size:22px;font-weight:700;margin-bottom:12px;color:white;">
                 Talent Count by Position Level
             </div>
@@ -364,13 +364,13 @@ with tab1:
         ax.set_xlabel("Age", color="white")
         ax.set_ylabel("Count", color="white")
         ax.tick_params(colors="white")
-        fig.patch.set_facecolor("#2e307d")
-        ax.set_facecolor("#2e307d")
+        fig.patch.set_facecolor("#449fe3")
+        ax.set_facecolor("#449fe3")
 
         st.markdown(
             f"""
-            <div style="border:3px solid #2e307d;border-radius:12px;
-                        padding:20px;margin-top:20px;background-color:#2e307d;">
+            <div style="border:3px solid #449fe3;border-radius:12px;
+                        padding:20px;margin-top:20px;background-color:#449fe3;">
                 <img src="data:image/png;base64,{fig_to_base64(fig)}" style="width:100%;border-radius:10px;">
             </div>
             """,
@@ -392,13 +392,13 @@ with tab1:
         ax2.set_xlabel("Position Level", color="white")
         ax2.set_ylabel("Count", color="white")
         ax2.tick_params(colors="white")
-        fig2.patch.set_facecolor("#2e307d")
-        ax2.set_facecolor("#2e307d")
+        fig2.patch.set_facecolor("#449fe3")
+        ax2.set_facecolor("#449fe3")
 
         st.markdown(
             f"""
-            <div style="border:3px solid #2e307d;border-radius:12px;
-                        padding:20px;margin-top:20px;background-color:#2e307d;">
+            <div style="border:3px solid #449fe3;border-radius:12px;
+                        padding:20px;margin-top:20px;background-color:#449fe3;">
                 <img src="data:image/png;base64,{fig_to_base64(fig2)}" style="width:100%;border-radius:10px;">
             </div>
             """,
@@ -429,13 +429,13 @@ with tab1:
 
     <div style='display:flex; justify-content:space-between; padding:6px 0;'>
         <div style='font-size:22px; font-weight:600; color:white;'>Average Talent</div>
-        <div style='font-size:22px; color:#dddddd;'>{cluster_avg}</div>
+        <div style='font-size:22px; color:#ffffff;'>{cluster_avg}</div>
     </div>
     """
 
     cluster_card = f"""
-    <div style='width:100%; border:3px solid #2e307d; border-radius:12px;
-                padding:20px; margin-top:15px; background-color:#2e307d;'>
+    <div style='width:100%; border:3px solid #449fe3; border-radius:12px;
+                padding:20px; margin-top:15px; background-color:#449fe3;'>
         <div style='font-size:22px; font-weight:700; margin-bottom:12px; color:white;'>
             Talent Count by Performance Group
         </div>
@@ -451,8 +451,8 @@ with tab1:
     salary_col = "Salary"
     if salary_col not in df_for_vis.columns:
         st.markdown(
-            "<div style='width:100%; border:3px solid #2e307d; border-radius:12px;"
-            " padding:20px; margin-top:15px; background-color:#2e307d;"
+            "<div style='width:100%; border:3px solid #449fe3; border-radius:12px;"
+            " padding:20px; margin-top:15px; background-color:#449fe3;"
             " font-family:Inter, sans-serif;'>"
             "<div style='font-size:22px; font-weight:700; margin-bottom:12px; color:white;'>"
             "Potential Loss"
@@ -472,8 +472,8 @@ with tab1:
             formatted_salary = "Rp" + str(total_salary)
 
         html_card = (
-            "<div style='width:100%; border:3px solid #2e307d; border-radius:12px;"
-            " padding:20px; margin-top:15px; background-color:#2e307d;"
+            "<div style='width:100%; border:3px solid #449fe3; border-radius:12px;"
+            " padding:20px; margin-top:15px; background-color:#449fe3;"
             " font-family:Inter, sans-serif;'>"
 
             "<div style='font-size:22px; font-weight:700; margin-bottom:12px; color:white;'>"
@@ -481,13 +481,13 @@ with tab1:
             "</div>"
 
             "<div style='display:flex; justify-content:space-between; align-items:center; padding:8px 0;'>"
-            "<div style='font-size:16px; color:#dddddd;'>"
+            "<div style='font-size:16px; color:#ffffff;'>"
             "Total monthly salary paid to low-performing talent"
             "</div>"
             f"<div style='font-size:28px; font-weight:700; color:#ff5757;'>{formatted_salary}</div>"
             "</div>"
 
-            "<div style='font-size:13px; margin-top:10px; color:#cfcfcf;'>"
+            "<div style='font-size:13px; margin-top:10px; color:#ffffff;'>"
             "This represents the estimated monthly salary load associated with low-performing talent, "
             "a direct indicator of potential productivity loss from a business perspective."
             "</div>"
@@ -776,7 +776,7 @@ with tab3:
     # ===========================================================
     # CARD BUILDERS (no design changes)
     # ===========================================================
-    def small_card(title, value, color="white", bg="#2e307d"):
+    def small_card(title, value, color="white", bg="#449fe3"):
         return f"""
         <div style='border:3px solid #2e307d;border-radius:12px;
                     padding:16px;margin-bottom:15px;background-color:{bg};'>
@@ -790,7 +790,7 @@ with tab3:
         safe_text = str(text) if text is not None else "—"
         return f"""
         <div style='border:3px solid #2e307d;border-radius:12px;
-                    padding:20px;margin-top:20px;background-color:#2e307d;'>
+                    padding:20px;margin-top:20px;background-color:#449fe3;'>
             <div style='font-size:22px;font-weight:700;margin-bottom:12px;color:white'>Description</div>
             <div style='font-size:18px;color:#ddd; white-space:normal; word-wrap:break-word;'>{safe_text}</div>
         </div>
