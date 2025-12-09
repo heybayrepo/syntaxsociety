@@ -51,6 +51,7 @@ table_css = """
 
 st.markdown(table_css, unsafe_allow_html=True)
 
+
 # === PAGE BACKGROUND ===
 page_bg = """
 <style>
@@ -266,6 +267,13 @@ tab1, tab2, tab3 = st.tabs(["Talent Overview", "Talent Performance", "Talent Pre
 with tab1:
 
     st.markdown("## 📸 Talent Overview")
+
+    st.markdown(
+    "<p style='color:#d0d0d0; font-size:16px; margin-top:-10px;'>"
+    "This section provides a clear view of our talent composition across roles, ages, and performance groups. The insights help HR identify where strengths are concentrated and where additional support may be needed, including understanding the monthly cost associated with low-performing talent."
+    "</p>",
+    unsafe_allow_html=True
+)
 
     colA, colB = st.columns(2)
 
@@ -508,6 +516,13 @@ with tab2:
     # ===========================================================
     st.markdown("## 🌱 Promotion-Ready")
 
+    st.markdown(
+    "<p style='color:#d0d0d0; font-size:16px; margin-top:-10px;'>"
+    "These employees have met the required criteria for promotion, showing strong readiness to step into greater responsibility."
+    "</p>",
+    unsafe_allow_html=True
+    )
+
     # attempt load model (silence warning handled below)
     try:
         lr_model = joblib.load("models/logistic_pipeline.pkl")
@@ -575,6 +590,14 @@ with tab2:
 
     # ⭐ Top Talent
     st.markdown("## ⭐ Top Talent")
+
+    st.markdown(
+    "<p style='color:#d0d0d0; font-size:16px; margin-top:-10px;'>"
+    "These high-performing employees show strong potential for future advancement, even if they have not yet met all promotion requirements."
+    "</p>",
+    unsafe_allow_html=True
+    )
+
 
     colA, colB = st.columns(2)
 
@@ -674,6 +697,12 @@ with tab2:
     # ===========================================================
     st.markdown("## ⚠️ High Risk Talent")
 
+    st.markdown(
+    "<p style='color:#d0d0d0; font-size:16px; margin-top:-10px;'>"
+    "These employees fall into lower performance ranges and may need targeted development, mentoring, or closer support."
+    "</p>",
+    unsafe_allow_html=True
+    )
     colR1, colR2 = st.columns(2)
 
     with colR1:
@@ -807,6 +836,16 @@ with tab3:
         """
 
     st.markdown("## 🔎 Talent Predictor")
+
+    st.markdown(
+    "<p style='color:#d0d0d0; font-size:16px; margin-top:-10px;'>"
+    "This tool allows HR to review individual employee profiles, understand their talent cluster and characteristics, "
+    "and assess promotion eligibility using the prediction model. It supports data-driven decisions by combining "
+    "employee attributes with machine learning algorithms."
+    "</p>",
+    unsafe_allow_html=True
+    )
+
     st.markdown("### Select Talent Input Method")
 
     # ===========================================================
@@ -977,6 +1016,7 @@ with tab3:
                 st.session_state["master_df"] = pd.concat([df_ref, enriched], ignore_index=True)
 
                 # ✅ SUCCESS CARD (HIJAU)
+                # SUCCESS CARD (HIJAU)
                 st.markdown(
                     f"""
                     <div style="
@@ -995,6 +1035,11 @@ with tab3:
                     """,
                     unsafe_allow_html=True
                 )
+
+                # === NEW: SHOW TABLES DIRECTLY ===
+
+                st.markdown("### Preview of your processed and clustered data")
+                st.dataframe(enriched)
 
             except Exception as e:
 
