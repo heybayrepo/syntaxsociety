@@ -258,6 +258,32 @@ st.markdown('# **Rakamin HR Intelligence Hub**')
 st.write('### *A centralized view of Rakamin workforce performance and potential.*')
 st.write('*Created by Syntax Society*')    
 
+# >>> TARUH CSS DI SINI <<<
+st.markdown("""
+    <style>    
+        /* Perbesar font semua tab */
+        .stTabs [role="tab"] p {
+            font-size: 16px !important;
+        }
+    
+        /* Garis bawah tab aktif */
+        .stTabs [data-baseweb="tab-highlight"] {
+            background-color: #00bf63 !important;
+        }
+
+        /* Warna teks tab aktif */
+        .stTabs [aria-selected="true"] p {
+            color: #00bf63 !important;
+            font-weight: 700 !important;
+        }
+
+        /* Warna teks saat hover */
+        .stTabs [role="tab"]:hover p {
+            color: #00bf63 !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # =========================
 # CREATE TABS
 # =========================
