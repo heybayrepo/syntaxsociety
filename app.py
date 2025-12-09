@@ -15,6 +15,8 @@ import os
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
+# st.set_page_config(layout="wide")
+
 # === DEFINE CSS FIRST (WAJIB) ===
 table_css = """
 <style>
@@ -967,14 +969,14 @@ with tab3:
         st.markdown("Upload CSV")
 
         template = pd.DataFrame({
-            "Employee_ID":["EMP0001"],
-            "Age":[30],
-            "Performance_Score":[5],
-            "Leadership_Score":[60],
-            "Training_Hours":[40],
-            "Projects_Handled":[5],
-            "Peer_Review_Score":[75],
-            "Current_Position_Level":["Senior"]
+            "Employee_ID": ["EMP0001"],
+            "Age": [30],
+            "Performance_Score": [5],
+            "Leadership_Score": [60],
+            "Training_Hours": [40],
+            "Projects_Handled": [5],
+            "Peer_Review_Score": [75],
+            "Current_Position_Level": ["Senior"]
         })
 
         st.download_button("Download template CSV", template.to_csv(index=False), "template.csv")
@@ -987,8 +989,6 @@ with tab3:
 
                 required_cols = set(template.columns)
                 if not required_cols.issubset(new.columns):
-
-                    # ❌ ERROR CARD (MERAH)
                     st.markdown(
                         """
                         <div style="
@@ -1009,14 +1009,15 @@ with tab3:
                     )
                     st.stop()
 
-                # Compute FE + clusters for the new uploaded rows only
+                # PROCESS: feature engineering & clustering for uploaded rows
                 enriched = apply_feature_engineering_and_clustering(new.copy())
 
-                # Append to existing dataset
+                # APPEND to master dataframe in session state
                 st.session_state["master_df"] = pd.concat([df_ref, enriched], ignore_index=True)
 
-                # ✅ SUCCESS CARD (HIJAU)
-                # SUCCESS CARD (HIJAU)
+                # ===========================================================
+                # SUCCESS CARD
+                # ===========================================================
                 st.markdown(
                     f"""
                     <div style="
@@ -1032,18 +1033,68 @@ with tab3:
                         ✓ Uploaded {len(new)} rows successfully.<br>
                         Go to <strong>'Select employee ID'</strong> to view/inspect.
                     </div>
+                    """, unsafe_allow_html=True
+                )
+
+                # === LOAD MODEL ===
+                model_path = "models/logistic_pipeline.pkl"
+                if "elig_model" not in st.session_state:
+                    st.session_state["elig_model"] = joblib.load(model_path)
+                model = st.session_state["elig_model"]
+
+                # === FEATURES USED IN TRAINING ===
+                logreg_features = [
+                    "Age",
+                    "Performance_Index",
+                    "Leadership_Index",
+                    "Potential_Index",
+                    "Training_Hours",
+                    "Peer_Review_Score",
+                    "Projects_Handled",
+                    "Performance_Consistency",
+                    "Growth_Momentum"
+                ]
+
+                # === PREDICT ELIGIBILITY ===
+                X_new = enriched[logreg_features]
+                enriched["Eligible_New"] = model.predict(X_new).astype(int)
+
+                # === 📌 CARD ELIGIBLE + LIST EMPLOYEE ID (TARUH DI SINI) ===
+                eligible_ids = enriched.loc[enriched["Eligible_New"] == 1, "Employee_ID"].tolist()
+                eligible_count = len(eligible_ids)
+                eligible_list_str = ", ".join(eligible_ids) if eligible_ids else "-"
+
+                st.markdown(
+                    f"""
+                    <div style="
+                        margin-top:18px;
+                        padding:18px;
+                        border-radius:12px;
+                        background-color:#1e90ff;
+                        color:white;
+                        font-size:18px;
+                        font-weight:600;
+                    ">
+                        {eligible_count} employees in this uploaded file are
+                        <strong>predicted to be promotion eligible</strong>.
+                        <br><br>
+                        <span style="
+                            font-size:15px;
+                            font-weight:400;
+                            line-height:1.6;
+                        ">
+                            <strong>Employee IDs:</strong> {eligible_list_str}
+                        </span>
+                    </div>
                     """,
                     unsafe_allow_html=True
                 )
 
-                # === NEW: SHOW TABLES DIRECTLY ===
-
+                # === SHOW PROCESSED + CLUSTERED DATA ===
                 st.markdown("### Preview of your processed and clustered data")
                 st.dataframe(enriched)
 
             except Exception as e:
-
-                # ❌ ERROR CARD (MERAH – KESALAHAN LAIN)
                 st.markdown(
                     f"""
                     <div style="
