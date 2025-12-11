@@ -57,9 +57,31 @@ st.markdown(table_css, unsafe_allow_html=True)
 # === PAGE BACKGROUND ===
 page_bg = """
 <style>
-[data-testid="stAppViewContainer"] {
-    background-color: #2a2b39;
+
+/* Light theme */
+@media (prefers-color-scheme: light) {
+    [data-testid="stAppViewContainer"] {
+        background-color: #ffffff !important;
+    }
+    [data-testid="stDataFrame"] .ag-root-wrapper,
+    [data-testid="stDataFrame"] .ag-cell {
+        background-color: #449fe3 !important;
+        color: black !important;
+    }
 }
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+    [data-testid="stAppViewContainer"] {
+        background-color: #2a2b39 !important;
+    }
+    [data-testid="stDataFrame"] .ag-root-wrapper,
+    [data-testid="stDataFrame"] .ag-cell {
+        background-color: #449fe3 !important;
+        color: white !important;
+    }
+}
+
 </style>
 """
 st.markdown(page_bg, unsafe_allow_html=True)
