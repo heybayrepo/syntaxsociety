@@ -682,13 +682,32 @@ with tab2:
                 )
 
     # ⭐ Top Talent
+    st.markdown("""
+    <style>
+
+    @media (prefers-color-scheme: light) {
+        .top-desc {
+            color: #000000 !important;   /* hitam */
+        }
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .top-desc {
+            color: #d0d0d0 !important;   /* abu terang */
+        }
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # ⭐ Top Talent
     st.markdown("## ⭐ Top Talent")
 
     st.markdown(
-    "<p style='color:#d0d0d0; font-size:16px; margin-top:-10px;'>"
-    "These high-performing employees show strong potential for future advancement, even if they have not yet met all promotion requirements."
-    "</p>",
-    unsafe_allow_html=True
+        "<p class='top-desc' style='font-size:16px; margin-top:-10px;'>"
+        "These high-performing employees show strong potential for future advancement, even if they have not yet met all promotion requirements."
+        "</p>",
+        unsafe_allow_html=True
     )
 
 
