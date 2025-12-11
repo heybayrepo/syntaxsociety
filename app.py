@@ -807,14 +807,34 @@ with tab2:
     # ===========================================================
     # ⚠️ HIGH RISK TALENT
     # ===========================================================
+    
+    st.markdown("""
+    <style>
+
+    @media (prefers-color-scheme: light) {
+        .risk-desc {
+            color: #000000 !important;   /* hitam */
+        }
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .risk-desc {
+            color: #d0d0d0 !important;   /* abu terang */
+        }
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.markdown("## ⚠️ High Risk Talent")
 
     st.markdown(
-    "<p style='color:#d0d0d0; font-size:16px; margin-top:-10px;'>"
-    "These employees fall into lower performance ranges and may need targeted development, mentoring, or closer support."
-    "</p>",
-    unsafe_allow_html=True
+        "<p class='risk-desc' style='font-size:16px; margin-top:-10px;'>"
+        "These employees fall into lower performance ranges and may need targeted development, mentoring, or closer support."
+        "</p>",
+        unsafe_allow_html=True
     )
+    
     colR1, colR2 = st.columns(2)
 
     with colR1:
