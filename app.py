@@ -908,7 +908,6 @@ with tab3:
         """
 
     def build_description_card(text):
-        # ensure long text wraps properly
         safe_text = str(text) if text is not None else "—"
         return f"""
         <div style='border:3px solid #2e307d;border-radius:12px;
@@ -928,15 +927,39 @@ with tab3:
         </div>
         """
 
+    # ===========================================================
+    # THEME-AWARE DESCRIPTION TEXT
+    # ===========================================================
+    st.markdown("""
+    <style>
+
+    @media (prefers-color-scheme: light) {
+        .predictor-desc {
+            color: #000000 !important;   /* hitam */
+        }
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .predictor-desc {
+            color: #d0d0d0 !important;   /* abu terang */
+        }
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ===========================================================
+    # SECTION HEADER
+    # ===========================================================
     st.markdown("## 🔎 Talent Predictor")
 
     st.markdown(
-    "<p style='color:#d0d0d0; font-size:16px; margin-top:-10px;'>"
-    "This tool allows HR to review individual employee profiles, understand their talent cluster and characteristics, "
-    "and assess promotion eligibility using the prediction model. It supports data-driven decisions by combining "
-    "employee attributes with machine learning algorithms."
-    "</p>",
-    unsafe_allow_html=True
+        "<p class='predictor-desc' style='font-size:16px; margin-top:-10px;'>"
+        "This tool allows HR to review individual employee profiles, understand their talent cluster and characteristics, "
+        "and assess promotion eligibility using the prediction model. It supports data-driven decisions by combining "
+        "employee attributes with machine learning algorithms."
+        "</p>",
+        unsafe_allow_html=True
     )
 
     st.markdown("### Select Talent Input Method")
