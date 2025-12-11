@@ -129,12 +129,12 @@ print("Cluster Metadata Saved → cluster_metadata.json\n")
 # 8. TARGET LABEL FOR PROMOTION ELIGIBILITY
 # ===========================================================
 df["Promotion_Score"] = (
-    df['Leadership_Influence'] * 0.425 +
+    df['Leadership_Influence'] * 0.074 +
     df['Performance_Index'] * 0.221 +
-    df['Performance_Consistency'] * 0.137 +
+    df['Performance_Consistency'] * 0.013 +
     df['Growth_Momentum'] * 0.130 +
-    df['Leadership_Index'] * 0.074 +
-    df['Potential_Index'] * 0.013
+    df['Leadership_Index'] * 0.425 +
+    df['Potential_Index'] * 0.137
 )
 
 threshold = df["Promotion_Score"].quantile(0.85)
