@@ -314,16 +314,38 @@ tab1, tab2, tab3 = st.tabs(["Talent Overview", "Talent Performance", "Talent Pre
 # ======================================================================
 # TAB 1 — TALENT OVERVIEW
 # ======================================================================
+
 with tab1:
+    st.markdown("""
+    <style>
+
+    /* Light theme */
+    @media (prefers-color-scheme: light) {
+        .talent-desc {
+            color: #000000 !important;   /* hitam */
+        }
+    }
+
+    /* Dark theme */
+    @media (prefers-color-scheme: dark) {
+        .talent-desc {
+            color: #d0d0d0 !important;   /* abu terang */
+        }
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
 
     st.markdown("## 📸 Talent Overview")
 
     st.markdown(
-    "<p style='color:#d0d0d0; font-size:16px; margin-top:-10px;'>"
-    "This section provides a clear view of our talent composition across roles, ages, and performance groups. The insights help HR identify where strengths are concentrated and where additional support may be needed, including understanding the monthly cost associated with low-performing talent."
-    "</p>",
-    unsafe_allow_html=True
-)
+        "<p class='talent-desc' style='font-size:16px; margin-top:-10px;'>"
+        "This section provides a clear view of our talent composition across roles, ages, and performance groups. "
+        "The insights help HR identify where strengths are concentrated and where additional support may be needed, "
+        "including understanding the monthly cost associated with low-performing talent."
+        "</p>",
+        unsafe_allow_html=True
+    )
 
     colA, colB = st.columns(2)
 
