@@ -586,13 +586,34 @@ with tab2:
     # ===========================================================
     # 🌱 Promotion-Ready Talent — compact + scrollable table
     # ===========================================================
+    st.markdown("""
+    <style>
+
+    /* Light theme */
+    @media (prefers-color-scheme: light) {
+        .promo-desc {
+            color: #000000 !important;   /* Hitam */
+        }
+    }
+
+    /* Dark theme */
+    @media (prefers-color-scheme: dark) {
+        .promo-desc {
+            color: #d0d0d0 !important;   /* Abu terang */
+        }
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
     st.markdown("## 🌱 Promotion-Ready")
 
     st.markdown(
-    "<p style='color:#d0d0d0; font-size:16px; margin-top:-10px;'>"
-    "These employees have met the required criteria for promotion, showing strong readiness to step into greater responsibility."
-    "</p>",
-    unsafe_allow_html=True
+        "<p class='promo-desc' style='font-size:16px; margin-top:-10px;'>"
+        "These employees have met the required criteria for promotion, showing strong readiness "
+        "to step into greater responsibility."
+        "</p>",
+        unsafe_allow_html=True
     )
 
     # attempt load model (silence warning handled below)
